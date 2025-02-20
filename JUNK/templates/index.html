@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SDT File Processor</title>
+    <script>
+        function loadPage(page) {
+            document.getElementById('loader').style.display = 'block'; // Show loader
+            fetch('/' + page)  // Fetch from Flask
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("Page not found");
+                    }
+                    return response.text();
+                })
+                .then(html => {
+                    document.getElementById('loader').style.display = 'none'; // Hide loader
+                    document.getElementById('dynamic-content').innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error loading page:', error);
+                    document.getElementById('dynamic-content').innerHTML = "<p style='color: red;'>Error loading content.</p>";
+                });
+        }
+    </script>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h2>Menu</h2>
+        <ul>
+            <li><a href="#" onclick="loadPage('upload')">Upload SDT File</a></li>
+            <li><a href="#" onclick="loadPage('process')">Process SDT File</a></li>
+            <li><a href="#" onclick="loadPage('save_output')">Save Output</a></li>
+            <li><a href="#" onclick="loadPage('convert_nc')">Convert SPT File to NC</a></li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="loader" id="loader" style="display:none;">Loading...</div>
+        <div id="dynamic-content">
+            <h1>Welcome to SDT File Processor</h1>
+            <p>Select an option from the sidebar.</p>
+        </div>
+    </div>
+
+</body>
+</html>
