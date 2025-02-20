@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Process SDT File</title>
+</head>
+<body>
+    <h1>Process SDT File</h1>
+    <form id="processForm" action="/process" method="post" onsubmit="submitForm(event, 'processForm')">
+        <label for="file">Select File:</label>
+        <select name="file">
+            {% for file in files %}
+                <option value="{{ file }}">{{ file }}</option>
+            {% endfor %}
+        </select>
+        <input type="submit" value="Process">
+    </form>
+</body>
+</html>
