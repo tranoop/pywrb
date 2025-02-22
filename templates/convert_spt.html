@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Convert SPT to NetCDF</title>
+</head>
+<body>
+    <h1>Convert SPT to NetCDF</h1>
+    <form id="convertForm" action="/convert_spt" method="post" onsubmit="submitForm(event, 'convertForm')">
+        
+        <label for="input_folder">Select Input Folder:</label>
+        <input type="file" id="input_folder" webkitdirectory directory multiple onchange="setFolderPath('input_folder_path', this)" required>
+        <input type="hidden" id="input_folder_path" name="input_folder">
+        <br><br>
+
+        <label for="output_folder">Select Output Folder:</label>
+        <input type="file" id="output_folder" webkitdirectory directory multiple onchange="setFolderPath('output_folder_path', this)" required>
+        <input type="hidden" id="output_folder_path" name="output_folder">
+        <br><br>
+
+        <input type="submit" value="Convert">
+    </form>
+
+    <script>
+        function setFolderPath(hiddenFieldId, inputElement) {
+            if (inputElement.files.length > 0) {
+                let fullPath = inputElement.files[0].webkitRelativePath;
+                let folderPath = fullPath.split('/')[0];  // Extract the root folder
+                document.getElementById(hiddenFieldId).value = folderPath;
+            }
+        }
+    </script>
+</body>
+</html>
+
