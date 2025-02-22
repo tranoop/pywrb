@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, send_from_directory, redirect, url_for
+from flask import Flask, render_template, request, send_from_directory
 import os
 from process_SDT_file import process_SDT_file  # Ensure this is correctly imported
 
@@ -20,46 +20,49 @@ def home():
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
-    """Handle SDT file uploads."""
+    """Handle multiple SDT file uploads."""
     if request.method == 'POST':
-        file = request.files.get('file')
+        files = request.files.getlist('files')
 
-        if not file or file.filename == '':
-            return "<p style='color: red;'>No file selected!</p>", 400
-        
-        if not file.filename.endswith('.SDT'):
-            return "<p style='color: red;'>Invalid file type. Only .SDT files allowed.</p>", 400
-        
-        # Save file
-        filepath = os.path.join(UPLOAD_FOLDER, file.filename)
-        file.save(filepath)
+        if not files or all(file.filename == '' for file in files):
+            return "<p style='color: red;'>No files selected!</p>", 400
 
-        return "<p>File uploaded successfully!</p>"
+        uploaded_files = []
+        for file in files:
+            if file and file.filename.endswith('.SDT'):
+                filepath = os.path.join(UPLOAD_FOLDER, file.filename)
+                file.save(filepath)
+                uploaded_files.append(file.filename)
+
+        return "<p>Files uploaded successfully: " + ", ".join(uploaded_files) + "</p>"
 
     return render_template('upload.html')
 
 @app.route('/process', methods=['GET', 'POST'])
+@app.route('/process', methods=['GET', 'POST'])
 def process():
-    """Process an uploaded SDT file."""
-    files = os.listdir(UPLOAD_FOLDER)
-
+    """Process multiple uploaded SDT files."""
+    files = os.listdir(UPLOAD_FOLDER)  # Get available files
+    
     if request.method == 'POST':
-        filename = request.form.get('file')
+        selected_files = request.form.getlist('files[]')  # Retrieve selected files
+        print(f"Selected files: {selected_files}")  # Debugging output
 
-        if not filename:
-            return "<p style='color: red;'>No file selected for processing.</p>", 400
+        if not selected_files:
+            return "<p style='color: red;'>No files selected for processing.</p>", 400
 
-        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        for filename in selected_files:
+            filepath = os.path.join(UPLOAD_FOLDER, filename)
+            if os.path.exists(filepath):
+                process_SDT_file(filepath)
+                os.remove(filepath)
+            else:
+                return f"<p style='color: red;'>File {filename} not found!</p>", 400
 
-        if not os.path.exists(filepath):
-            return "<p style='color: red;'>File not found!</p>", 400
-
-        # Call the function from process_SDT_file.py
-        process_SDT_file(filepath)
-
-        return "<p>File processed successfully!</p>"
+        return "<p>Files processed successfully!</p>"
 
     return render_template('process.html', files=files)
+
 
 @app.route('/save_output')
 def save_output():
@@ -74,3 +77,4 @@ def download(filename):
 
 if __name__ == '__main__':
     app.run(debug=True)
+

@@ -160,7 +160,8 @@ def write_output(dts, prms, prms4, sys, spt, fod, fod4, fid_spt):
     """Write output data to files."""
     fod.write(f"{dts}, {', '.join(f'{p:.2f}' for p in prms)}, "
               f"{sys[4]:.2f}, {sys[5]:.2f}, {sys[6]}\n")
-    fod4.write(f"{dts}\t{'\t'.join(f'{p:.2f}' for p in prms4)}\n")
+    formatted_values = "\t".join(f"{p:.2f}" for p in prms4)  # Format values first
+    fod4.write(f"{dts}\t{formatted_values}\n")  # Then use f-string
 
     fid_spt.write(f"Time Stamp= {dts}\n")
     for row in spt:
