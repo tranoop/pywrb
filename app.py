@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, send_from_directory
 import os
 from process_SDT_file import process_SDT_file  # Ensure this is correctly imported
+from SPT_to_NC import convert_spt_to_nc  # Import your function
+
 
 # Flask app setup
 app = Flask(__name__)
@@ -76,7 +78,26 @@ def save_output():
 def download(filename):
     """Allow users to download processed files."""
     return send_from_directory(PROCESSED_FOLDER, filename, as_attachment=True)
+@app.route('/convert_spt', methods=['GET', 'POST'])
+def convert_spt():
+    """Handles folder selection and calls SPT to NC conversion function."""
+    if request.method == 'POST':
+        input_folder = request.form.get('input_folder')
+        output_folder = request.form.get('output_folder')
 
+        if not os.path.exists(input_folder):
+            return "<p style='color: red;'>Input folder does not exist!</p>", 400
+        
+        os.makedirs(output_folder, exist_ok=True)  # Ensure output folder exists
+
+        # Call the conversion function
+        try:
+            convert_spt_to_nc(input_folder, output_folder)
+            return f"<p>Conversion completed! NetCDF files saved in {output_folder}</p>"
+        except Exception as e:
+            return f"<p style='color: red;'>Error during conversion: {e}</p>", 500
+
+    return render_template('convert_spt.html')
 if __name__ == '__main__':
     app.run(debug=True)
 
