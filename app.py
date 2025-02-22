@@ -39,7 +39,6 @@ def upload():
     return render_template('upload.html')
 
 @app.route('/process', methods=['GET', 'POST'])
-@app.route('/process', methods=['GET', 'POST'])
 def process():
     """Process multiple uploaded SDT files."""
     files = os.listdir(UPLOAD_FOLDER)  # Get available files
@@ -51,18 +50,21 @@ def process():
         if not selected_files:
             return "<p style='color: red;'>No files selected for processing.</p>", 400
 
+        # Clear old processed files before adding new ones
+        for old_file in os.listdir(PROCESSED_FOLDER):
+            os.remove(os.path.join(PROCESSED_FOLDER, old_file))
+        
         for filename in selected_files:
             filepath = os.path.join(UPLOAD_FOLDER, filename)
             if os.path.exists(filepath):
-                process_SDT_file(filepath)
-                os.remove(filepath)
+                process_SDT_file(filepath)  # Process file (Ensure this function saves output in 
+                os.remove(filepath)  # Remove file after processing
             else:
                 return f"<p style='color: red;'>File {filename} not found!</p>", 400
 
         return "<p>Files processed successfully!</p>"
 
     return render_template('process.html', files=files)
-
 
 @app.route('/save_output')
 def save_output():
