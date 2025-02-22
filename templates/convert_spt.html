@@ -6,30 +6,19 @@
 </head>
 <body>
     <h1>Convert SPT to NetCDF</h1>
-    <form id="convertForm" action="/convert_spt" method="post" onsubmit="submitForm(event, 'convertForm')">
+    
+    <form id="convertForm" action="/convert_spt" method="post" enctype="multipart/form-data">
         
-        <label for="input_folder">Select Input Folder:</label>
-        <input type="file" id="input_folder" webkitdirectory directory multiple onchange="setFolderPath('input_folder_path', this)" required>
-        <input type="hidden" id="input_folder_path" name="input_folder">
+        <!-- Select SPT Files -->
+        <label for="spt_files">Select SPT Files:</label>
+        <input type="file" id="spt_files" name="spt_files" accept="*_SPT.txt" multiple required>
         <br><br>
 
-        <label for="output_folder">Select Output Folder:</label>
-        <input type="file" id="output_folder" webkitdirectory directory multiple onchange="setFolderPath('output_folder_path', this)" required>
-        <input type="hidden" id="output_folder_path" name="output_folder">
+        <p style="font-weight: bold; color: blue;">Output Folder: converted_nc_files</p>
         <br><br>
 
         <input type="submit" value="Convert">
     </form>
-
-    <script>
-        function setFolderPath(hiddenFieldId, inputElement) {
-            if (inputElement.files.length > 0) {
-                let fullPath = inputElement.files[0].webkitRelativePath;
-                let folderPath = fullPath.split('/')[0];  // Extract the root folder
-                document.getElementById(hiddenFieldId).value = folderPath;
-            }
-        }
-    </script>
 </body>
 </html>
 
