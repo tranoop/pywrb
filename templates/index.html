@@ -13,18 +13,15 @@
             height: 100vh;
         }
 
-        /* Sidebar Styles */
         .sidebar {
             width: 200px;
             background-color: #f4f4f4;
             padding: 20px;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
         }
 
         .sidebar h2 {
             font-size: 1.2em;
             margin-top: 0;
-            color: #333;
         }
 
         .sidebar ul {
@@ -38,20 +35,12 @@
 
         .sidebar ul li a {
             text-decoration: none;
-            color: #333;
             font-size: 1.1em;
             cursor: pointer;
             display: block;
             padding: 8px;
-            border-radius: 5px;
         }
 
-        .sidebar ul li a:hover {
-            background-color: #007bff;
-            color: white;
-        }
-
-        /* Main Content Styles */
         .main-content {
             flex: 1;
             padding: 20px;
@@ -67,17 +56,15 @@
 </head>
 <body>
 
-    <!-- Sidebar -->
     <div class="sidebar">
         <h2>Menu</h2>
         <ul>
-            <li><a href="#" onclick="loadPage('upload')">Upload SDT File</a></li>
-            <li><a href="#" onclick="loadPage('process')">Process SDT File</a></li>
+            <li><a href="#" onclick="loadPage('upload')">Upload SDT Files</a></li>
+            <li><a href="#" onclick="loadPage('process')">Process SDT Files</a></li>
             <li><a href="#" onclick="loadPage('save_output')">Save Output</a></li>
         </ul>
     </div>
 
-    <!-- Main Content -->
     <div class="main-content">
         <div class="loader" id="loader">Loading...</div>
         <div id="dynamic-content">
@@ -88,18 +75,18 @@
 
     <script>
         function loadPage(page) {
-            document.getElementById('loader').style.display = 'block'; // Show loader
+            document.getElementById('loader').style.display = 'block';
             fetch('/' + page)
                 .then(response => response.text())
                 .then(html => {
-                    document.getElementById('loader').style.display = 'none'; // Hide loader
+                    document.getElementById('loader').style.display = 'none';
                     document.getElementById('dynamic-content').innerHTML = html;
                 })
-                .catch(error => console.error('Error loading page:', error));
+                .catch(error => console.error('Error:', error));
         }
 
         function submitForm(event, formId) {
-            event.preventDefault(); // Prevent full page reload
+            event.preventDefault();
             var form = document.getElementById(formId);
             var formData = new FormData(form);
             document.getElementById('loader').style.display = 'block';
@@ -113,9 +100,10 @@
                 document.getElementById('loader').style.display = 'none';
                 document.getElementById('dynamic-content').innerHTML = html;
             })
-            .catch(error => console.error('Error submitting form:', error));
+            .catch(error => console.error('Error:', error));
         }
     </script>
 
 </body>
 </html>
+

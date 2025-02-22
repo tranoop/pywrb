@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Upload SDT File</title>
+    <title>Upload SDT Files</title>
 </head>
 <body>
-    <h1>Upload SDT File</h1>
+    <h1>Upload SDT Files</h1>
     <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data" onsubmit="submitForm(event, 'uploadForm')">
-        <input type="file" name="file" accept=".SDT" required>
+        <input type="file" name="files" accept=".SDT" multiple required>
         <input type="submit" value="Upload">
     </form>
 </body>
 </html>
+
