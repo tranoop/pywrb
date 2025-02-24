@@ -7,9 +7,11 @@
 <body>
     <h1>Convert SPT to NetCDF</h1>
     
-    <form id="convertForm" action="/convert_spt" method="post" enctype="multipart/form-data">
-        
-        <!-- Select SPT Files -->
+    {% if message %}
+        <p style="color: green; font-weight: bold;">{{ message }}</p>
+    {% endif %}
+
+    <form id="convertForm" action="/convert_spt" method="post" enctype="multipart/form-data" onsubmit="submitForm(event, 'convertForm')">
         <label for="spt_files">Select SPT Files:</label>
         <input type="file" id="spt_files" name="spt_files" accept="*_SPT.txt" multiple required>
         <br><br>
@@ -21,4 +23,3 @@
     </form>
 </body>
 </html>
-
