@@ -1,8 +1,8 @@
-from flask import Flask, render_template, request, send_from_directory
+from flask import Flask, render_template, request, send_from_directory, send_file
 import os
 from process_SDT_file import process_SDT_file  # Ensure this is correctly imported
 from SPT_to_NC import convert_spt_to_nc  # Import your function
-
+import zipfile
 
 # Flask app setup
 app = Flask(__name__)
@@ -59,7 +59,7 @@ def process():
         for filename in selected_files:
             filepath = os.path.join(UPLOAD_FOLDER, filename)
             if os.path.exists(filepath):
-                process_SDT_file(filepath)  # Process file (Ensure this function saves output in 
+                process_SDT_file(filepath)  # Process file (Ensure this function saves output in PROCESSED_FOLDER)
                 os.remove(filepath)  # Remove file after processing
             else:
                 return f"<p style='color: red;'>File {filename} not found!</p>", 400
@@ -76,8 +76,43 @@ def save_output():
 
 @app.route('/download/<filename>')
 def download(filename):
-    """Allow users to download processed files."""
+    """Allow users to download processed files individually."""
     return send_from_directory(PROCESSED_FOLDER, filename, as_attachment=True)
+
+@app.route('/download_all')
+def download_all():
+    """Create and serve a ZIP file containing all processed files."""
+    processed_files = os.listdir(PROCESSED_FOLDER)
+    
+    # Debug: Print processed files
+    print("Processed Files:", processed_files)
+    
+    if not processed_files:
+        return "<p style='color: red;'>No processed files available to download.</p>", 400
+
+    # Create a temporary ZIP file
+    zip_path = os.path.join(PROCESSED_FOLDER, "processed_files.zip")
+    
+    # Debug: Print ZIP file path
+    print("ZIP File Path:", zip_path)
+    
+    try:
+        # Create ZIP file
+        with zipfile.ZipFile(zip_path, 'w') as zipf:
+            for file in processed_files:
+                file_path = os.path.join(PROCESSED_FOLDER, file)
+                zipf.write(file_path, file)  # Add file to ZIP
+                print(f"Added {file} to ZIP")
+        
+        # Debug: Confirm ZIP creation
+        print("ZIP file created successfully")
+        
+        # Send the ZIP file to the user
+        return send_file(zip_path, as_attachment=True)
+    except Exception as e:
+        # Debug: Print any errors
+        print(f"Error creating ZIP file: {e}")
+        return f"<p style='color: red;'>Error creating ZIP file: {e}</p>", 500
 
 @app.route('/convert_spt', methods=['GET', 'POST'])
 def convert_spt():
@@ -111,7 +146,5 @@ def convert_spt():
 
     return render_template('convert_spt.html')
 
-
 if __name__ == '__main__':
     app.run(debug=True)
-

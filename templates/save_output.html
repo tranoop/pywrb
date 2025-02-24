@@ -16,6 +16,12 @@
             <p>No processed files available.</p>
         {% endif %}
     </ul>
+
+    {% if processed_files %}
+        <a href="{{ url_for('download_all') }}">
+            <button>Download All Files (ZIP)</button>
+        </a>
+    {% endif %}
 </body>
 </html>
 
