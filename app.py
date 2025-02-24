@@ -116,18 +116,14 @@ def download_all():
 
 @app.route('/convert_spt', methods=['GET', 'POST'])
 def convert_spt():
-    """Handles SPT file selection and converts to NetCDF."""
     if request.method == 'POST':
-        uploaded_files = request.files.getlist('spt_files')  # Get selected SPT files
-
+        uploaded_files = request.files.getlist('spt_files')
         if not uploaded_files:
-            return "<p style='color: red;'>No SPT files selected!</p>", 400
+            return render_template('convert_spt.html', message="No SPT files selected!")
 
-        # Use a fixed output folder instead
         output_folder = "converted_nc_files"
-        os.makedirs(output_folder, exist_ok=True)  # Ensure the folder exists
+        os.makedirs(output_folder, exist_ok=True)
 
-        # Save uploaded files to a temporary folder
         temp_input_folder = "temp_spt_files"
         os.makedirs(temp_input_folder, exist_ok=True)
 
@@ -137,14 +133,12 @@ def convert_spt():
             file.save(file_path)
             saved_files.append(file_path)
 
-        # Convert the saved SPT files to NetCDF
         try:
             convert_spt_to_nc(temp_input_folder, output_folder)
-            return f"<p>Conversion completed! NetCDF files saved in {output_folder}</p>"
+            return render_template('convert_spt.html', message=f"Conversion completed! NetCDF files saved in {output_folder}")
         except Exception as e:
-            return f"<p style='color: red;'>Error during conversion: {e}</p>", 500
+            return render_template('convert_spt.html', message=f"Error during conversion: {e}")
 
     return render_template('convert_spt.html')
-
 if __name__ == '__main__':
     app.run(debug=True)
