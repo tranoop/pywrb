@@ -11,12 +11,12 @@ app = Flask(__name__)
 UPLOAD_FOLDER = "uploads"
 PROCESSED_FOLDER = "processed"
 CONVERTED_FOLDER = "converted_nc_files"
-
+TEMP_SPT_FOLDER= "temp_spt_files"
 # Ensure folders exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(PROCESSED_FOLDER, exist_ok=True)
 os.makedirs(CONVERTED_FOLDER, exist_ok=True)
-
+os.makedirs(TEMP_SPT_FOLDER, exist_ok=True)
 
 @app.route('/')
 def home():
@@ -147,7 +147,7 @@ def convert_spt():
 def delete_all():
     """Delete all files in uploads, processed, and converted folders."""
     try:
-        for folder in [UPLOAD_FOLDER, PROCESSED_FOLDER, CONVERTED_FOLDER]:
+        for folder in [UPLOAD_FOLDER, PROCESSED_FOLDER, CONVERTED_FOLDER,TEMP_SPT_FOLDER]:
             for file in os.listdir(folder):
                 file_path = os.path.join(folder, file)
                 os.remove(file_path)

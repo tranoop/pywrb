@@ -105,6 +105,24 @@
                 .catch(error => console.error('Error:', error));
         }
 
+        function submitForm(event, formId) {
+            event.preventDefault();
+            var form = document.getElementById(formId);
+            var formData = new FormData(form);
+            document.getElementById('loader').style.display = 'block';
+
+            fetch(form.action, {
+                method: form.method,
+                body: formData
+            })
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('dynamic-content').innerHTML = html;
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
         function deleteAllFiles() {
             if (confirm("Are you sure you want to delete all files? This action cannot be undone!")) {
                 fetch('/delete_all', {
@@ -113,6 +131,7 @@
                 .then(response => response.json())
                 .then(data => {
                     alert(data.message || data.error);
+                    loadPage('save_output'); // Refresh only the right-side content after deletion
                 })
                 .catch(error => console.error('Error:', error));
             }
