@@ -10,10 +10,13 @@ app = Flask(__name__)
 # Define folders for uploads and processed files
 UPLOAD_FOLDER = "uploads"
 PROCESSED_FOLDER = "processed"
+CONVERTED_FOLDER = "converted_nc_files"
 
 # Ensure folders exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(PROCESSED_FOLDER, exist_ok=True)
+os.makedirs(CONVERTED_FOLDER, exist_ok=True)
+
 
 @app.route('/')
 def home():
@@ -140,5 +143,16 @@ def convert_spt():
             return render_template('convert_spt.html', message=f"Error during conversion: {e}")
 
     return render_template('convert_spt.html')
+@app.route('/delete_all', methods=['POST'])
+def delete_all():
+    """Delete all files in uploads, processed, and converted folders."""
+    try:
+        for folder in [UPLOAD_FOLDER, PROCESSED_FOLDER, CONVERTED_FOLDER]:
+            for file in os.listdir(folder):
+                file_path = os.path.join(folder, file)
+                os.remove(file_path)
+        return jsonify({"message": "All files deleted successfully!"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 if __name__ == '__main__':
     app.run(debug=True)
