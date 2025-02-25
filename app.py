@@ -124,25 +124,42 @@ def convert_spt():
         if not uploaded_files:
             return render_template('convert_spt.html', message="No SPT files selected!")
 
-        output_folder = "converted_nc_files"
-        os.makedirs(output_folder, exist_ok=True)
-
-        temp_input_folder = "temp_spt_files"
-        os.makedirs(temp_input_folder, exist_ok=True)
+        os.makedirs(CONVERTED_FOLDER, exist_ok=True)
+        os.makedirs(TEMP_SPT_FOLDER, exist_ok=True)
 
         saved_files = []
         for file in uploaded_files:
-            file_path = os.path.join(temp_input_folder, file.filename)
+            file_path = os.path.join(TEMP_SPT_FOLDER, file.filename)
             file.save(file_path)
             saved_files.append(file_path)
 
         try:
-            convert_spt_to_nc(temp_input_folder, output_folder)
-            return render_template('convert_spt.html', message=f"Conversion completed! NetCDF files saved in {output_folder}")
+            convert_spt_to_nc(TEMP_SPT_FOLDER, CONVERTED_FOLDER)
+            return render_template('convert_spt.html', message="Conversion completed! You can now download the files.")
         except Exception as e:
             return render_template('convert_spt.html', message=f"Error during conversion: {e}")
 
     return render_template('convert_spt.html')
+
+@app.route('/download_nc_all')
+def download_nc_all():
+    """Create and serve a ZIP file containing all converted NetCDF files."""
+    netcdf_files = os.listdir(CONVERTED_FOLDER)
+    
+    if not netcdf_files:
+        return "<p style='color: red;'>No NetCDF files available to download.</p>", 400
+
+    zip_path = os.path.join(CONVERTED_FOLDER, "converted_nc_files.zip")
+    
+    try:
+        with zipfile.ZipFile(zip_path, 'w') as zipf:
+            for file in netcdf_files:
+                file_path = os.path.join(CONVERTED_FOLDER, file)
+                zipf.write(file_path, file)
+        
+        return send_file(zip_path, as_attachment=True)
+    except Exception as e:
+        return f"<p style='color: red;'>Error creating ZIP file: {e}</p>", 500
 @app.route('/delete_all', methods=['POST'])
 def delete_all():
     """Delete all files in uploads, processed, and converted folders."""
