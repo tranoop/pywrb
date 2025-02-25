@@ -9,6 +9,9 @@
     
     {% if message %}
         <p style="color: green; font-weight: bold;">{{ message }}</p>
+        <a href="{{ url_for('download_nc_all') }}">
+            <button>Download NC Files</button>
+        </a>
     {% endif %}
 
     <form id="convertForm" action="/convert_spt" method="post" enctype="multipart/form-data" onsubmit="submitForm(event, 'convertForm')">
@@ -16,10 +19,8 @@
         <input type="file" id="spt_files" name="spt_files" accept="*_SPT.txt" multiple required>
         <br><br>
 
-        <p style="font-weight: bold; color: blue;">Output Folder: converted_nc_files</p>
-        <br><br>
-
         <input type="submit" value="Convert">
     </form>
 </body>
 </html>
+
