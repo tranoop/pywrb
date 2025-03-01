@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Remove Spikes</title>
+</head>
+<body>
+    <h1>Remove Spikes from Data</h1>
+
+    {% if message %}
+        <p style="color: green; font-weight: bold;">{{ message }}</p>
+    {% endif %}
+
+    <form id="spikeForm" action="/remove_spike" method="post" enctype="multipart/form-data" onsubmit="submitForm(event, 'spikeForm')">
+        <label for="his_files">Select `.his` Files:</label>
+        <input type="file" id="his_files" name="his_files" accept=".his" multiple required>
+        <br><br>
+
+        <label for="window">Rolling Mean Window Size:</label>
+        <input type="number" id="window" name="window" value="2" required>
+        <br><br>
+
+        <label for="threshold">Spike Threshold:</label>
+        <input type="number" step="0.01" id="threshold" name="threshold" value="0.1" required>
+        <br><br>
+
+        <input type="submit" value="Remove Spikes">
+    </form>
+
+    {% if plot_urls %}
+        <h2>Processed Data Plots</h2>
+        {% for plot_url in plot_urls %}
+            <img src="{{ plot_url }}" alt="Spike Removal Plot" style="width:100%; margin-top:10px;">
+        {% endfor %}
+    {% endif %}
+</body>
+</html>
+

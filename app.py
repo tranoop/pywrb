@@ -1,8 +1,15 @@
-from flask import Flask, render_template, request, send_from_directory, send_file
+from flask import Flask, render_template, request, send_from_directory, send_file,url_for
 import os
+import pandas as pd
+import numpy as np
+import glob
 from process_SDT_file import process_SDT_file  # Ensure this is correctly imported
 from SPT_to_NC import convert_spt_to_nc  # Import your function
+from remove_spike import remove_spike
 import zipfile
+import matplotlib.pyplot as plt
+from io import BytesIO
+
 
 # Flask app setup
 app = Flask(__name__)
@@ -12,11 +19,14 @@ UPLOAD_FOLDER = "uploads"
 PROCESSED_FOLDER = "processed"
 CONVERTED_FOLDER = "converted_nc_files"
 TEMP_SPT_FOLDER= "temp_spt_files"
+PLOT_FOLDER = "static/plots"  # ✅ This was missing before!
+
 # Ensure folders exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(PROCESSED_FOLDER, exist_ok=True)
 os.makedirs(CONVERTED_FOLDER, exist_ok=True)
 os.makedirs(TEMP_SPT_FOLDER, exist_ok=True)
+os.makedirs(PLOT_FOLDER, exist_ok=True)
 
 @app.route('/')
 def home():
@@ -171,5 +181,33 @@ def delete_all():
         return jsonify({"message": "All files deleted successfully!"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+
+@app.route('/remove_spike', methods=['GET', 'POST'])
+def remove_spike_route():
+    if request.method == 'POST':
+        uploaded_files = request.files.getlist('his_files')
+        window = int(request.form.get('window', 2))
+        threshold = float(request.form.get('threshold', 0.1))
+
+        if not uploaded_files:
+            return render_template('remove_spike.html', message="No files selected!")
+
+        saved_files = []
+        for file in uploaded_files:
+            filepath = os.path.join(UPLOAD_FOLDER, file.filename)
+            file.save(filepath)
+            saved_files.append(filepath)  # ✅ Passing list of file paths
+
+        # ✅ Call remove_spike() with a list of files instead of a string
+        plot_files = remove_spike(saved_files, window=window, threshold=threshold)
+
+        if plot_files:
+            return render_template('remove_spike.html', plot_urls=[url_for('static', filename=f'plots/{p}') for p in plot_files], message="Spikes removed successfully!")
+        else:
+            return render_template('remove_spike.html', message="No plots generated.")
+
+    return render_template('remove_spike.html')
 if __name__ == '__main__':
     app.run(debug=True)
