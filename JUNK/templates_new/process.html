@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Process SDT Files</title>
+</head>
+<body>
+    <h1>Process SDT Files</h1>
+
+    {% if files %}
+        <form id="processForm" action="/process" method="post" onsubmit="submitForm(event, 'processForm')">
+            <label for="files">Select Files:</label>
+            <select name="files[]" multiple required>
+                {% for file in files %}
+                    <option value="{{ file }}">{{ file }}</option>
+                {% endfor %}
+            </select>
+            <input type="submit" value="Process">
+        </form>
+    {% else %}
+        <p>No files available to process. Please upload files first.</p>
+    {% endif %}
+</body>
+</html>
+

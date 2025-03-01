@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Convert SPT to NetCDF</title>
+</head>
+<body>
+    <h1>Convert SPT to NetCDF</h1>
+    
+    {% if message %}
+        <p style="color: green; font-weight: bold;">{{ message }}</p>
+        <a href="{{ url_for('download_nc_all') }}">
+            <button>Download NC Files</button>
+        </a>
+    {% endif %}
+
+    <form id="convertForm" action="/convert_spt" method="post" enctype="multipart/form-data" onsubmit="submitForm(event, 'convertForm')">
+        <label for="spt_files">Select SPT Files:</label>
+        <input type="file" id="spt_files" name="spt_files" accept="*_SPT.txt" multiple required>
+        <br><br>
+
+        <input type="submit" value="Convert">
+    </form>
+</body>
+</html>
+
