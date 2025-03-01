@@ -2,11 +2,19 @@ import os
 import numpy as np
 import datetime
 
+PROCESSED_FOLDER = "processed"
+
 def process_SDT_file(s_file):
     """Main function to process the SDT file."""
-    s_out = s_file.replace('.SDT', '.his')
-    s_out4 = s_file.replace('.SDT', '_225.csv')
-    s_out5 = s_file.replace('.SDT', '_SPT.txt')
+    filename_base = os.path.splitext(os.path.basename(s_file))[0]
+
+    # Ensure processed folder exists
+    os.makedirs(PROCESSED_FOLDER, exist_ok=True)
+
+    # Define output file paths
+    s_out = os.path.join(PROCESSED_FOLDER, filename_base + '.his')
+    s_out4 = os.path.join(PROCESSED_FOLDER, filename_base + '_225.csv')
+    s_out5 = os.path.join(PROCESSED_FOLDER, filename_base + '_SPT.txt')
 
     if os.path.exists(s_file):
         nb = 0
@@ -44,10 +52,9 @@ def process_SDT_file(s_file):
                     prms4 = [H for H in [Hm0, TI, TE, T1, Tz, T3, T4] + sys[4:]]
                     write_output(dt, prms, prms4, sys, spt, fod, fod4, fid_spt)
 
-        print(f"Processing of {s_file} completed.")
+        print(f"Processed files saved: {s_out}, {s_out4}, {s_out5}")
     else:
         print(f"{s_file} does not exist.")
-
 def read_header(fid):
     """Read header and timestamp from the file."""
     hdr = np.fromfile(fid, dtype=np.uint8, count=5)
@@ -153,7 +160,8 @@ def write_output(dts, prms, prms4, sys, spt, fod, fod4, fid_spt):
     """Write output data to files."""
     fod.write(f"{dts}, {', '.join(f'{p:.2f}' for p in prms)}, "
               f"{sys[4]:.2f}, {sys[5]:.2f}, {sys[6]}\n")
-    fod4.write(f"{dts}\t{'\t'.join(f'{p:.2f}' for p in prms4)}\n")
+    formatted_values = "\t".join(f"{p:.2f}" for p in prms4)  # Format values first
+    fod4.write(f"{dts}\t{formatted_values}\n")  # Then use f-string
 
     fid_spt.write(f"Time Stamp= {dts}\n")
     for row in spt:

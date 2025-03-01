@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDT File Processor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            position: relative;
+        }
+
+        .sidebar {
+            width: 200px;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+
+        .sidebar h2 {
+            font-size: 1.2em;
+            margin-top: 0;
+        }
+
+        .sidebar ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .sidebar ul li {
+            margin: 15px 0;
+        }
+
+        .sidebar ul li a {
+            text-decoration: none;
+            font-size: 1.1em;
+            cursor: pointer;
+            display: block;
+            padding: 8px;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .loader {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .delete-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: red;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .delete-button:hover {
+            background-color: darkred;
+        }
+    </style>
+</head>
+<body>
+
+    <button class="delete-button" onclick="deleteAllFiles()">Delete All Files</button>
+
+    <div class="sidebar">
+        <h2>Menu</h2>
+        <ul>
+            <li><a href="#" onclick="loadPage('upload')">Upload SDT Files</a></li>
+            <li><a href="#" onclick="loadPage('process')">Process SDT Files</a></li>
+            <li><a href="#" onclick="loadPage('save_output')">Save Output</a></li>
+            <li><a href="#" onclick="loadPage('convert_spt')">Convert to NetCDF</a></li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <div class="loader" id="loader">Loading...</div>
+        <div id="dynamic-content">
+            <h1>Welcome to SDT File Processor</h1>
+            <p>Select an option from the sidebar.</p>
+        </div>
+    </div>
+
+    <script>
+        function loadPage(page) {
+            document.getElementById('loader').style.display = 'block';
+            fetch('/' + page)
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('loader').style.display = 'none';
+                    document.getElementById('dynamic-content').innerHTML = html;
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function submitForm(event, formId) {
+            event.preventDefault();
+            var form = document.getElementById(formId);
+            var formData = new FormData(form);
+            document.getElementById('loader').style.display = 'block';
+
+            fetch(form.action, {
+                method: form.method,
+                body: formData
+            })
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('dynamic-content').innerHTML = html;
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function deleteAllFiles() {
+            if (confirm("Are you sure you want to delete all files? This action cannot be undone!")) {
+                fetch('/delete_all', {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message || data.error);
+                    loadPage('save_output'); // Refresh only the right-side content after deletion
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        }
+    </script>
+
+</body>
+</html>
+
