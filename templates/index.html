@@ -13,27 +13,22 @@
             height: 100vh;
             position: relative;
         }
-
         .sidebar {
             width: 200px;
             background-color: #f4f4f4;
             padding: 20px;
         }
-
         .sidebar h2 {
             font-size: 1.2em;
             margin-top: 0;
         }
-
         .sidebar ul {
             list-style-type: none;
             padding: 0;
         }
-
         .sidebar ul li {
             margin: 15px 0;
         }
-
         .sidebar ul li a {
             text-decoration: none;
             font-size: 1.1em;
@@ -41,19 +36,16 @@
             display: block;
             padding: 8px;
         }
-
         .main-content {
             flex: 1;
             padding: 20px;
             overflow-y: auto;
         }
-
         .loader {
             display: none;
             text-align: center;
             padding: 20px;
         }
-
         .delete-button {
             position: absolute;
             top: 10px;
@@ -65,14 +57,12 @@
             cursor: pointer;
             border-radius: 5px;
         }
-
         .delete-button:hover {
             background-color: darkred;
         }
     </style>
 </head>
 <body>
-
     <button class="delete-button" onclick="deleteAllFiles()">Delete All Files</button>
 
     <div class="sidebar">
@@ -82,8 +72,7 @@
             <li><a href="#" onclick="loadPage('process')">Process SDT Files</a></li>
             <li><a href="#" onclick="loadPage('save_output')">Save Output</a></li>
             <li><a href="#" onclick="loadPage('convert_spt')">Convert to NetCDF</a></li>
-            <li><a href="#" onclick="loadPage('remove_spike')">Remove Spikes</a></li> <!-- NEW TAB -->
-
+            <li><a href="#" onclick="loadPage('remove_spike')">Remove Spikes</a></li>
         </ul>
     </div>
 
@@ -104,7 +93,11 @@
                     document.getElementById('loader').style.display = 'none';
                     document.getElementById('dynamic-content').innerHTML = html;
                 })
-                .catch(error => console.error('Error:', error));
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('loader').style.display = 'none';
+                    document.getElementById('dynamic-content').innerHTML = '<p>Error loading page.</p>';
+                });
         }
 
         function submitForm(event, formId) {
@@ -122,7 +115,11 @@
                 document.getElementById('loader').style.display = 'none';
                 document.getElementById('dynamic-content').innerHTML = html;
             })
-            .catch(error => console.error('Error:', error));
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('dynamic-content').innerHTML = '<p>Error submitting form.</p>';
+            });
         }
 
         function deleteAllFiles() {
@@ -133,13 +130,11 @@
                 .then(response => response.json())
                 .then(data => {
                     alert(data.message || data.error);
-                    loadPage('save_output'); // Refresh only the right-side content after deletion
+                    loadPage('remove_spike'); // Refresh the remove_spike page after deletion
                 })
                 .catch(error => console.error('Error:', error));
             }
         }
     </script>
-
 </body>
 </html>
-
