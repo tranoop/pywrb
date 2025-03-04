@@ -9,6 +9,8 @@ from remove_spike import remove_spike
 import zipfile
 import matplotlib.pyplot as plt
 from io import BytesIO
+from datetime import datetime
+
 
 
 # Flask app setup
@@ -186,14 +188,17 @@ def delete_all():
 
 @app.route('/remove_spike', methods=['GET', 'POST'])
 def remove_spike_route():
+    """Handle spike removal functionality."""
     if request.method == 'POST':
         try:
+            # Get form parameters
             window = int(request.form.get('window', 2))
             threshold = float(request.form.get('threshold', 0.1))
             abnormal_max = float(request.form.get('abnormal_max', 5))
             abnormal_min = float(request.form.get('abnormal_min', 0))
 
             print(f"Received values: window={window}, threshold={threshold}, abnormal_max={abnormal_max}, abnormal_min={abnormal_min}")
+
         except ValueError as e:
             return render_template('remove_spike.html', message=f"Error: Invalid input - {e}")
 
@@ -213,15 +218,22 @@ def remove_spike_route():
         # Process files with remove_spike
         try:
             plot_files = remove_spike(saved_files, window, threshold, abnormal_max, abnormal_min)
-            plot_urls = [url_for('static', filename=f'plots/{p}') for p in plot_files]
-            return render_template('remove_spike.html', plot_urls=plot_urls, message="Spikes removed successfully!",
-                                  window=window, threshold=threshold, abnormal_max=abnormal_max, abnormal_min=abnormal_min)
+            
+            # ✅ Modify this line to append a timestamp for cache busting
+            plot_urls = [url_for('static', filename=f'plots/{p}') + f"?{int(datetime.now().timestamp())}" for p in plot_files]
+
+            return render_template(
+                'remove_spike.html',
+                plot_urls=plot_urls,
+                message="Spikes removed successfully!",
+                window=window,
+                threshold=threshold,
+                abnormal_max=abnormal_max,
+                abnormal_min=abnormal_min
+            )
         except Exception as e:
             return render_template('remove_spike.html', message=f"Error during processing: {e}")
 
     return render_template('remove_spike.html', window=2, threshold=0.1, abnormal_max=5, abnormal_min=0)
-
-
-
 if __name__ == '__main__':
     app.run(debug=True)
