@@ -9,7 +9,7 @@
         .message.error { color: red; }
         label { display: inline-block; width: 200px; margin: 5px 0; }
         input[type="number"] { width: 100px; }
-        img { max-width: 100%; margin-top: 10px; }
+        img { max-width: 100%; margin-top: 10px; display: block; }
     </style>
 </head>
 <body>
@@ -19,7 +19,7 @@
         <p class="message {% if 'Error' in message %}error{% else %}success{% endif %}">{{ message }}</p>
     {% endif %}
 
-    <form id="spikeForm" action="/remove_spike" method="post" enctype="multipart/form-data" onsubmit="submitForm(event, 'spikeForm')">
+    <form id="spikeForm" action="/remove_spike" method="post" enctype="multipart/form-data">
         <label for="his_files">Select `.his` Files:</label>
         <input type="file" id="his_files" name="his_files" accept=".his" multiple required>
         <br>
@@ -46,8 +46,37 @@
     {% if plot_urls %}
         <h2>Processed Data Plots</h2>
         {% for plot_url in plot_urls %}
-            <img src="{{ plot_url }}" alt="Spike Removal Plot">
+            <img id="spikePlot-{{ loop.index }}" src="{{ plot_url }}" alt="Spike Removal Plot">
         {% endfor %}
     {% endif %}
+
+    <script>
+        document.getElementById("spikeForm").addEventListener("submit", function(event) {
+            event.preventDefault(); // Prevent default form submission
+            var formData = new FormData(this);
+
+            fetch("/remove_spike", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.text())
+            .then(html => {
+                document.body.innerHTML = html; // Replace entire body with updated content
+                refreshImages();
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("Error processing request.");
+            });
+        });
+
+        function refreshImages() {
+            let images = document.querySelectorAll("img[id^='spikePlot']");
+            images.forEach(img => {
+                img.src = img.src.split("?")[0] + "?" + new Date().getTime();
+            });
+        }
+    </script>
 </body>
 </html>
+
