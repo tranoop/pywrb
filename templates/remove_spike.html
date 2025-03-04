@@ -15,9 +15,7 @@
 <body>
     <h1>Remove Spikes from Data</h1>
 
-    {% if message %}
-        <p class="message {% if 'Error' in message %}error{% else %}success{% endif %}">{{ message }}</p>
-    {% endif %}
+    <p id="statusMessage" class="message"></p> <!-- Status message -->
 
     <form id="spikeForm" action="/remove_spike" method="post" enctype="multipart/form-data">
         <label for="his_files">Select `.his` Files:</label>
@@ -43,17 +41,25 @@
         <input type="submit" value="Remove Spikes">
     </form>
 
-    {% if plot_urls %}
-        <h2>Processed Data Plots</h2>
-        {% for plot_url in plot_urls %}
-            <img id="spikePlot-{{ loop.index }}" src="{{ plot_url }}" alt="Spike Removal Plot">
-        {% endfor %}
-    {% endif %}
+    <div id="plotContainer">
+        {% if plot_urls %}
+            <h2>Processed Data Plots</h2>
+            {% for plot_url in plot_urls %}
+                <img class="spikePlot" src="{{ plot_url }}" alt="Spike Removal Plot">
+            {% endfor %}
+        {% endif %}
+    </div>
 
     <script>
         document.getElementById("spikeForm").addEventListener("submit", function(event) {
-            event.preventDefault(); // Prevent default form submission
+            event.preventDefault(); // Prevent form from submitting normally
+            
             var formData = new FormData(this);
+            var statusMessage = document.getElementById("statusMessage");
+            var plotContainer = document.getElementById("plotContainer");
+
+            statusMessage.textContent = "Processing..."; // Show status message
+            statusMessage.classList.remove("success", "error");
 
             fetch("/remove_spike", {
                 method: "POST",
@@ -61,17 +67,27 @@
             })
             .then(response => response.text())
             .then(html => {
-                document.body.innerHTML = html; // Replace entire body with updated content
-                refreshImages();
+                // Parse the returned HTML to extract new plots
+                var tempDiv = document.createElement("div");
+                tempDiv.innerHTML = html;
+                
+                var newPlots = tempDiv.querySelector("#plotContainer").innerHTML; // Extract new plot images
+                plotContainer.innerHTML = newPlots; // Replace only the plot images
+                
+                statusMessage.textContent = "Spikes removed successfully!";
+                statusMessage.classList.add("success");
+
+                refreshImages(); // Force image refresh
             })
             .catch(error => {
                 console.error("Error:", error);
-                alert("Error processing request.");
+                statusMessage.textContent = "Error processing request.";
+                statusMessage.classList.add("error");
             });
         });
 
         function refreshImages() {
-            let images = document.querySelectorAll("img[id^='spikePlot']");
+            let images = document.querySelectorAll(".spikePlot");
             images.forEach(img => {
                 img.src = img.src.split("?")[0] + "?" + new Date().getTime();
             });
