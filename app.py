@@ -190,37 +190,26 @@ def delete_all():
 def remove_spike_route():
     """Handle spike removal functionality."""
     if request.method == 'POST':
+        uploaded_files = request.files.getlist('his_files')
+
+        if not uploaded_files:
+            return render_template('remove_spike.html', message="Error: No file uploaded!")
+
+        file_paths = []
+        for file in uploaded_files:
+            filepath = os.path.join(UPLOAD_FOLDER, file.filename)
+            file.save(filepath)
+            file_paths.append(filepath)
+
         try:
-            # Get form parameters
             window = int(request.form.get('window', 2))
             threshold = float(request.form.get('threshold', 0.1))
             abnormal_max = float(request.form.get('abnormal_max', 5))
             abnormal_min = float(request.form.get('abnormal_min', 0))
 
-            print(f"Received values: window={window}, threshold={threshold}, abnormal_max={abnormal_max}, abnormal_min={abnormal_min}")
-
-        except ValueError as e:
-            return render_template('remove_spike.html', message=f"Error: Invalid input - {e}")
-
-        # Handle uploaded files
-        uploaded_files = request.files.getlist('his_files')
-        if not uploaded_files or all(file.filename == '' for file in uploaded_files):
-            return render_template('remove_spike.html', message="Error: No files selected!")
-
-        # Save uploaded files to UPLOAD_FOLDER
-        saved_files = []
-        for file in uploaded_files:
-            if file and file.filename.endswith('.his'):
-                filepath = os.path.join(UPLOAD_FOLDER, file.filename)
-                file.save(filepath)
-                saved_files.append(filepath)
-
-        # Process files with remove_spike
-        try:
-            plot_files = remove_spike(saved_files, window, threshold, abnormal_max, abnormal_min)
-            
-            # ✅ Modify this line to append a timestamp for cache busting
-            plot_urls = [url_for('static', filename=f'plots/{p}') + f"?{int(datetime.now().timestamp())}" for p in plot_files]
+            # Process the files using remove_spike function
+            plot_files = remove_spike(file_paths, window, threshold, abnormal_max, abnormal_min)
+            plot_urls = [url_for('static', filename=f'plots/{p}') for p in plot_files]
 
             return render_template(
                 'remove_spike.html',
@@ -232,7 +221,7 @@ def remove_spike_route():
                 abnormal_min=abnormal_min
             )
         except Exception as e:
-            return render_template('remove_spike.html', message=f"Error during processing: {e}")
+            return render_template('remove_spike.html', message=f"Error: {e}")
 
     return render_template('remove_spike.html', window=2, threshold=0.1, abnormal_max=5, abnormal_min=0)
 if __name__ == '__main__':
