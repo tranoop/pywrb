@@ -15,11 +15,13 @@
 <body>
     <h1>Remove Spikes from Data</h1>
 
-    <p id="statusMessage" class="message"></p> <!-- Status message -->
+    <p id="statusMessage" class="message {% if message %}{{ 'success' if 'Error' not in message else 'error' }}{% endif %}">
+        {% if message %}{{ message }}{% endif %}
+    </p>
 
     <form id="spikeForm" action="/remove_spike" method="post" enctype="multipart/form-data">
-        <label for="his_files">Select `.his` Files:</label>
-        <input type="file" id="his_files" name="his_files" accept=".his" multiple required>
+        <label for="his_files">Select `.his` Files (Optional if previously uploaded):</label>
+        <input type="file" id="his_files" name="his_files" accept=".his" multiple>
         <br>
 
         <label for="window">Rolling Mean Window Size:</label>
@@ -52,13 +54,13 @@
 
     <script>
         document.getElementById("spikeForm").addEventListener("submit", function(event) {
-            event.preventDefault(); // Prevent form from submitting normally
-            
+            event.preventDefault(); // Prevent full-page reload
+
             var formData = new FormData(this);
             var statusMessage = document.getElementById("statusMessage");
             var plotContainer = document.getElementById("plotContainer");
 
-            statusMessage.textContent = "Processing..."; // Show status message
+            statusMessage.textContent = "Processing...";
             statusMessage.classList.remove("success", "error");
 
             fetch("/remove_spike", {
@@ -67,17 +69,16 @@
             })
             .then(response => response.text())
             .then(html => {
-                // Parse the returned HTML to extract new plots
                 var tempDiv = document.createElement("div");
                 tempDiv.innerHTML = html;
-                
+
                 var newPlots = tempDiv.querySelector("#plotContainer").innerHTML; // Extract new plot images
-                plotContainer.innerHTML = newPlots; // Replace only the plot images
-                
+                plotContainer.innerHTML = newPlots; // Update plot images only
+
                 statusMessage.textContent = "Spikes removed successfully!";
                 statusMessage.classList.add("success");
 
-                refreshImages(); // Force image refresh
+                refreshImages();
             })
             .catch(error => {
                 console.error("Error:", error);
