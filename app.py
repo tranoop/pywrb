@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, send_from_directory, send_file,url_for
+from flask import Flask, render_template, request, send_from_directory, send_file, url_for, session, jsonify
 import os
 import pandas as pd
 import numpy as np
@@ -15,6 +15,8 @@ from datetime import datetime
 
 # Flask app setup
 app = Flask(__name__)
+app.secret_key = 'supersecretkey'  # Required for session handling
+
 
 # Define folders for uploads and processed files
 UPLOAD_FOLDER = "uploads"
@@ -195,33 +197,43 @@ def delete_all():
 
 @app.route('/remove_spike', methods=['GET', 'POST'])
 def remove_spike_route():
-    """Handle spike removal functionality."""
+    """Handle spike removal functionality with persistent file storage for trial and error."""
+    
+    file_path = session.get('uploaded_his_file')  # Retrieve stored file path
+
     if request.method == 'POST':
         uploaded_files = request.files.getlist('his_files')
 
-        if not uploaded_files:
+        # If a new file is uploaded, store it
+        if uploaded_files and uploaded_files[0].filename != '':
+            file = uploaded_files[0]
+            file_path = os.path.join(UPLOAD_FOLDER, file.filename)
+            file.save(file_path)
+            session['uploaded_his_file'] = file_path  # Update session with new file
+
+        if not file_path or not os.path.exists(file_path):
             return render_template('remove_spike.html', message="Error: No file uploaded!")
 
-        file_paths = []
-        for file in uploaded_files:
-            filepath = os.path.join(UPLOAD_FOLDER, file.filename)
-            file.save(filepath)
-            file_paths.append(filepath)
-
         try:
+            # Get input values
             window = int(request.form.get('window', 2))
             threshold = float(request.form.get('threshold', 0.1))
             abnormal_max = float(request.form.get('abnormal_max', 5))
             abnormal_min = float(request.form.get('abnormal_min', 0))
 
-            # Process the files using remove_spike function
-            plot_files = remove_spike(file_paths, window, threshold, abnormal_max, abnormal_min)
-            plot_urls = [url_for('static', filename=f'plots/{p}') for p in plot_files]
+            print(f"Received input values -> Window: {window}, Threshold: {threshold}, Max: {abnormal_max}, Min: {abnormal_min}")  # Debugging line
+
+            # Process the stored file using remove_spike function
+            plot_files = remove_spike([file_path], window, threshold, abnormal_max, abnormal_min)
+
+            # Add a timestamp to prevent caching
+            plot_urls = [f"{url_for('static', filename=f'plots/{p}')}?t={datetime.now().timestamp()}" for p in plot_files]
 
             return render_template(
                 'remove_spike.html',
                 plot_urls=plot_urls,
-                message="Spikes removed successfully!",
+                message=f"Spikes removed successfully! Using file: {os.path.basename(file_path)}",
+                stored_filename=os.path.basename(file_path),
                 window=window,
                 threshold=threshold,
                 abnormal_max=abnormal_max,
