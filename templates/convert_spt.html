@@ -3,24 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <title>Convert SPT to NetCDF</title>
+    <script>
+        function submitForm(event, formId) {
+            event.preventDefault(); // Prevent full-page reload
+
+            let form = document.getElementById(formId);
+            let formData = new FormData(form);
+            let downloadSection = document.getElementById('download-section');
+
+            fetch(form.action, {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('dynamic-content').innerHTML = html;
+
+                // Show the download button after processing
+                if (downloadSection) {
+                    downloadSection.style.display = 'block';
+                }
+            })
+            .catch(error => console.error("Error:", error));
+        }
+    </script>
 </head>
 <body>
     <h1>Convert SPT to NetCDF</h1>
-    
+
     {% if message %}
         <p style="color: green; font-weight: bold;">{{ message }}</p>
-        <a href="{{ url_for('download_nc_all') }}">
-            <button>Download NC Files</button>
-        </a>
     {% endif %}
 
     <form id="convertForm" action="/convert_spt" method="post" enctype="multipart/form-data" onsubmit="submitForm(event, 'convertForm')">
         <label for="spt_files">Select SPT Files:</label>
         <input type="file" id="spt_files" name="spt_files" accept="*_SPT.txt" multiple required>
         <br><br>
-
         <input type="submit" value="Convert">
     </form>
+
+    <div id="download-section" style="display: {% if message %}block{% else %}none{% endif %};">
+        <a href="{{ url_for('download_nc_all') }}">
+            <button>Download NC Files</button>
+        </a>
+    </div>
 </body>
 </html>
 

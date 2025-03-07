@@ -134,22 +134,28 @@ def convert_spt():
     if request.method == 'POST':
         uploaded_files = request.files.getlist('spt_files')
         if not uploaded_files:
-            return "<p style='color: red;'>No SPT files selected!</p>", 400
+            return render_template('convert_spt.html', message="No SPT files selected!")
 
         os.makedirs(CONVERTED_FOLDER, exist_ok=True)
         os.makedirs(TEMP_SPT_FOLDER, exist_ok=True)
 
-        saved_files = []
+        # Save uploaded files
         for file in uploaded_files:
             file_path = os.path.join(TEMP_SPT_FOLDER, file.filename)
             file.save(file_path)
-            saved_files.append(file_path)
 
         try:
+            # Convert all files in TEMP_SPT_FOLDER
             convert_spt_to_nc(TEMP_SPT_FOLDER, CONVERTED_FOLDER)
-            return "<p>Conversion completed! You can now download the files.</p>"
+
+            # Get converted files
+            converted_files = os.listdir(CONVERTED_FOLDER)
+            if converted_files:
+                return render_template('convert_spt.html', message="Conversion completed! You can now download the files.")
+            else:
+                return render_template('convert_spt.html', message="No NetCDF files were created. Please check input data.")
         except Exception as e:
-            return f"<p style='color: red;'>Error during conversion: {e}</p>", 500
+            return render_template('convert_spt.html', message=f"Error during conversion: {e}")
 
     return render_template('convert_spt.html')
 
@@ -177,7 +183,7 @@ def download_nc_all():
 def delete_all():
     """Delete all files in uploads, processed, and converted folders."""
     try:
-        for folder in [UPLOAD_FOLDER, PROCESSED_FOLDER, CONVERTED_FOLDER,TEMP_SPT_FOLDER]:
+        for folder in [UPLOAD_FOLDER, PROCESSED_FOLDER, CONVERTED_FOLDER,TEMP_SPT_FOLDER, PLOT_FOLDER]:
             for file in os.listdir(folder):
                 file_path = os.path.join(folder, file)
                 os.remove(file_path)
