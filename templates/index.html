@@ -87,18 +87,15 @@
     <script>
         function loadPage(page) {
             document.getElementById('loader').style.display = 'block';
+
             fetch('/' + page)
                 .then(response => response.text())
                 .then(html => {
                     document.getElementById('loader').style.display = 'none';
-                    
-                    // Update only the content inside #dynamic-content
                     document.getElementById('dynamic-content').innerHTML = html;
 
-                    // If "Remove Spikes" page is loaded, attach the script dynamically
-                    if (page === 'remove_spike') {
-                        attachRemoveSpikeScript();
-                    }
+                    // Attach dynamic form submission handling
+                    attachFormHandler();
                 })
                 .catch(error => {
                     console.error('Error:', error);
@@ -107,50 +104,35 @@
                 });
         }
 
-        function attachRemoveSpikeScript() {
-            let form = document.getElementById("spikeForm");
-            if (!form) return;  // Exit if form doesn't exist
+        function attachFormHandler() {
+            let form = document.querySelector("#dynamic-content form");
+            if (!form) return;
 
             form.addEventListener("submit", function(event) {
                 event.preventDefault(); // Prevent full-page reload
 
-                var formData = new FormData(this);
-                var statusMessage = document.getElementById("statusMessage");
-                var plotContainer = document.getElementById("plotContainer");
+                let formData = new FormData(form);
+                let loader = document.getElementById('loader');
+                loader.style.display = 'block';
 
-                statusMessage.textContent = "Processing...";
-                statusMessage.classList.remove("success", "error");
-
-                fetch("/remove_spike", {
+                fetch(form.action, {
                     method: "POST",
                     body: formData
                 })
                 .then(response => response.text())
                 .then(html => {
-                    var tempDiv = document.createElement("div");
-                    tempDiv.innerHTML = html;
+                    loader.style.display = 'none';
+                    document.getElementById('dynamic-content').innerHTML = html;
 
-                    var newPlots = tempDiv.querySelector("#plotContainer").innerHTML; // Extract new plot images
-                    plotContainer.innerHTML = newPlots; // Update plot images only
-
-                    statusMessage.textContent = "Spikes removed successfully!";
-                    statusMessage.classList.add("success");
-
-                    refreshImages();
+                    // Reattach the event listener after updating content
+                    attachFormHandler();
                 })
                 .catch(error => {
+                    loader.style.display = 'none';
                     console.error("Error:", error);
-                    statusMessage.textContent = "Error processing request.";
-                    statusMessage.classList.add("error");
+                    document.getElementById('dynamic-content').innerHTML = "<p>Error processing request.</p>";
                 });
             });
-
-            function refreshImages() {
-                let images = document.querySelectorAll(".spikePlot");
-                images.forEach(img => {
-                    img.src = img.src.split("?")[0] + "?" + new Date().getTime();
-                });
-            }
         }
 
         function deleteAllFiles() {

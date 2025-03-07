@@ -134,7 +134,7 @@ def convert_spt():
     if request.method == 'POST':
         uploaded_files = request.files.getlist('spt_files')
         if not uploaded_files:
-            return render_template('convert_spt.html', message="No SPT files selected!")
+            return "<p style='color: red;'>No SPT files selected!</p>", 400
 
         os.makedirs(CONVERTED_FOLDER, exist_ok=True)
         os.makedirs(TEMP_SPT_FOLDER, exist_ok=True)
@@ -147,11 +147,12 @@ def convert_spt():
 
         try:
             convert_spt_to_nc(TEMP_SPT_FOLDER, CONVERTED_FOLDER)
-            return render_template('convert_spt.html', message="Conversion completed! You can now download the files.")
+            return "<p>Conversion completed! You can now download the files.</p>"
         except Exception as e:
-            return render_template('convert_spt.html', message=f"Error during conversion: {e}")
+            return f"<p style='color: red;'>Error during conversion: {e}</p>", 500
 
     return render_template('convert_spt.html')
+
 
 @app.route('/download_nc_all')
 def download_nc_all():
