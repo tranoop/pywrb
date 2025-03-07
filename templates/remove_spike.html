@@ -19,9 +19,14 @@
         {% if message %}{{ message }}{% endif %}
     </p>
 
+    <!-- Show the current file being used -->
+    {% if stored_filename %}
+        <p class="message success">Using file: <b>{{ stored_filename }}</b></p>
+    {% endif %}
+
     <form id="spikeForm" action="/remove_spike" method="post" enctype="multipart/form-data">
-        <label for="his_files">Select `.his` Files (Optional if previously uploaded):</label>
-        <input type="file" id="his_files" name="his_files" accept=".his" multiple>
+        <label for="his_files">Select `.his` File (Optional):</label>
+        <input type="file" id="his_files" name="his_files" accept=".his">
         <br>
 
         <label for="window">Rolling Mean Window Size:</label>
@@ -47,12 +52,20 @@
         {% if plot_urls %}
             <h2>Processed Data Plots</h2>
             {% for plot_url in plot_urls %}
+                <!-- Use JavaScript to force refresh -->
                 <img class="spikePlot" src="{{ plot_url }}" alt="Spike Removal Plot">
             {% endfor %}
         {% endif %}
     </div>
 
     <script>
+        function refreshImages() {
+            let images = document.querySelectorAll(".spikePlot");
+            images.forEach(img => {
+                img.src = img.src.split("?")[0] + "?t=" + new Date().getTime(); // Force reload with timestamp
+            });
+        }
+
         document.getElementById("spikeForm").addEventListener("submit", function(event) {
             event.preventDefault(); // Prevent full-page reload
 
@@ -72,13 +85,14 @@
                 var tempDiv = document.createElement("div");
                 tempDiv.innerHTML = html;
 
-                var newPlots = tempDiv.querySelector("#plotContainer").innerHTML; // Extract new plot images
-                plotContainer.innerHTML = newPlots; // Update plot images only
+                var newPlots = tempDiv.querySelector("#plotContainer").innerHTML;
+                plotContainer.innerHTML = newPlots;
 
-                statusMessage.textContent = "Spikes removed successfully!";
+                var newMessage = tempDiv.querySelector("#statusMessage").textContent;
+                statusMessage.textContent = newMessage;
                 statusMessage.classList.add("success");
 
-                refreshImages();
+                refreshImages(); // Force images to reload
             })
             .catch(error => {
                 console.error("Error:", error);
@@ -86,14 +100,6 @@
                 statusMessage.classList.add("error");
             });
         });
-
-        function refreshImages() {
-            let images = document.querySelectorAll(".spikePlot");
-            images.forEach(img => {
-                img.src = img.src.split("?")[0] + "?" + new Date().getTime();
-            });
-        }
     </script>
 </body>
 </html>
-

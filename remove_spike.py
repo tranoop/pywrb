@@ -1,3 +1,6 @@
+import matplotlib
+matplotlib.use('Agg')  # ✅ Use non-GUI backend to prevent errors
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,27 +13,32 @@ def remove_spike(files, window=2, threshold=0.1, abnormal_max=5, abnormal_min=0)
 
     for file in files:
         try:
-            fig, ax = plt.subplots(figsize=(16, 6))
+            print(f"Processing file: {file}")  # ✅ Debugging line
+            print(f"Applied Parameters -> Window: {window}, Threshold: {threshold}, Max: {abnormal_max}, Min: {abnormal_min}")  # ✅ Debugging line
             
+            fig, ax = plt.subplots(figsize=(16, 6))
+
             # Read data
             dat = pd.read_csv(file, header=None)
             dat = dat.rename(columns={0: "Date", 1: "Hs"})
             dat["Date"] = pd.to_datetime(dat["Date"])
-            
+
             # Remove abnormal values
             dat = dat[(dat["Hs"] >= abnormal_min) & (dat["Hs"] <= abnormal_max)]
-            
+            print(f"Data size after abnormal value removal: {len(dat)}")  # ✅ Debugging line
+
             # Plot raw data
             ax.plot(dat["Date"], dat["Hs"], label="Raw Data", color='red')
-            
+
             # Compute rolling mean and filter data
             dat['rolling_mean'] = dat["Hs"].rolling(window=window, center=True).mean()
             dat['diff'] = np.abs(dat["Hs"] - dat['rolling_mean'])
             filtered_dat = dat[dat['diff'] <= threshold]
-            dat = dat[(dat["Hs"] >= abnormal_min) & (dat["Hs"] <= abnormal_max)]
+            print(f"Data size after spike removal: {len(filtered_dat)}")  # ✅ Debugging line
+
             # Plot filtered data
             ax.plot(filtered_dat["Date"], filtered_dat["Hs"], label="Filtered Data", color='blue')
-            
+
             # Customize plot
             ax.set_xlabel("Date")
             ax.set_ylabel("Hs")
@@ -41,7 +49,7 @@ def remove_spike(files, window=2, threshold=0.1, abnormal_max=5, abnormal_min=0)
             plot_filename = f"plot_{os.path.basename(file)}.png"
             plot_path = os.path.join(PLOT_FOLDER, plot_filename)
             plt.savefig(plot_path)
-            plt.close(fig)  # Close the figure to free memory
+            plt.close(fig)  # ✅ Close figure to free memory
 
             plot_files.append(plot_filename)
         except Exception as e:
