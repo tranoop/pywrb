@@ -200,6 +200,7 @@ def remove_spike_route():
     """Handle spike removal functionality with persistent file storage for trial and error."""
     
     file_path = session.get('uploaded_his_file')  # Retrieve stored file path
+    processed_file_path = None  # File path for downloading the processed file
 
     if request.method == 'POST':
         uploaded_files = request.files.getlist('his_files')
@@ -224,7 +225,12 @@ def remove_spike_route():
             print(f"Received input values -> Window: {window}, Threshold: {threshold}, Max: {abnormal_max}, Min: {abnormal_min}")  # Debugging line
 
             # Process the stored file using remove_spike function
-            plot_files = remove_spike([file_path], window, threshold, abnormal_max, abnormal_min)
+            plot_files, filtered_data = remove_spike([file_path], window, threshold, abnormal_max, abnormal_min)
+
+            # Save the processed data to a CSV file for download
+            processed_filename = f"processed_{os.path.basename(file_path)}.csv"
+            processed_file_path = os.path.join(PROCESSED_FOLDER, processed_filename)
+            filtered_data.to_csv(processed_file_path, index=False)
 
             # Add a timestamp to prevent caching
             plot_urls = [f"{url_for('static', filename=f'plots/{p}')}?t={datetime.now().timestamp()}" for p in plot_files]
@@ -237,11 +243,21 @@ def remove_spike_route():
                 window=window,
                 threshold=threshold,
                 abnormal_max=abnormal_max,
-                abnormal_min=abnormal_min
+                abnormal_min=abnormal_min,
+                processed_filename=processed_filename  # Pass processed file name to template
             )
         except Exception as e:
             return render_template('remove_spike.html', message=f"Error: {e}")
 
     return render_template('remove_spike.html', window=2, threshold=0.1, abnormal_max=5, abnormal_min=0)
+
+@app.route('/download_spike_removed/<filename>')
+def download_spike_removed(filename):
+    """Route to download the processed spike-removed file."""
+    processed_file_path = os.path.join(PROCESSED_FOLDER, filename)
+    if os.path.exists(processed_file_path):
+        return send_file(processed_file_path, as_attachment=True)
+    else:
+        return "<p style='color: red;'>Processed file not found!</p>", 404
 if __name__ == '__main__':
     app.run(debug=True)

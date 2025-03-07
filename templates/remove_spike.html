@@ -10,6 +10,19 @@
         label { display: inline-block; width: 200px; margin: 5px 0; }
         input[type="number"] { width: 100px; }
         img { max-width: 100%; margin-top: 10px; display: block; }
+        .download-button {
+            display: inline-block;
+            padding: 10px 15px;
+            background-color: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+        .download-button:hover {
+            background-color: #218838;
+        }
     </style>
 </head>
 <body>
@@ -52,11 +65,19 @@
         {% if plot_urls %}
             <h2>Processed Data Plots</h2>
             {% for plot_url in plot_urls %}
-                <!-- Use JavaScript to force refresh -->
                 <img class="spikePlot" src="{{ plot_url }}" alt="Spike Removal Plot">
             {% endfor %}
         {% endif %}
     </div>
+
+    <!-- Download button for processed file -->
+    {% if processed_filename %}
+        <p>
+            <a href="{{ url_for('download_spike_removed', filename=processed_filename) }}" class="download-button">
+                Download Processed File
+            </a>
+        </p>
+    {% endif %}
 
     <script>
         function refreshImages() {
@@ -93,6 +114,17 @@
                 statusMessage.classList.add("success");
 
                 refreshImages(); // Force images to reload
+
+                // Update download button
+                var newDownloadButton = tempDiv.querySelector(".download-button");
+                if (newDownloadButton) {
+                    var existingButton = document.querySelector(".download-button");
+                    if (existingButton) {
+                        existingButton.parentNode.replaceChild(newDownloadButton, existingButton);
+                    } else {
+                        document.body.appendChild(newDownloadButton);
+                    }
+                }
             })
             .catch(error => {
                 console.error("Error:", error);

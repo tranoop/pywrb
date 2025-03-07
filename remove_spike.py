@@ -1,5 +1,5 @@
 import matplotlib
-matplotlib.use('Agg')  # ✅ Use non-GUI backend to prevent errors
+matplotlib.use('Agg')  # Use non-GUI backend to prevent errors
 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -10,11 +10,12 @@ PLOT_FOLDER = "static/plots"  # Folder to save plots
 
 def remove_spike(files, window=2, threshold=0.1, abnormal_max=5, abnormal_min=0):
     plot_files = []  # List to store saved plot filenames
+    filtered_data = None  # Store filtered data
 
     for file in files:
         try:
-            print(f"Processing file: {file}")  # ✅ Debugging line
-            print(f"Applied Parameters -> Window: {window}, Threshold: {threshold}, Max: {abnormal_max}, Min: {abnormal_min}")  # ✅ Debugging line
+            print(f"Processing file: {file}")  # Debugging line
+            print(f"Applied Parameters -> Window: {window}, Threshold: {threshold}, Max: {abnormal_max}, Min: {abnormal_min}")  # Debugging line
             
             fig, ax = plt.subplots(figsize=(16, 6))
 
@@ -25,19 +26,15 @@ def remove_spike(files, window=2, threshold=0.1, abnormal_max=5, abnormal_min=0)
 
             # Remove abnormal values
             dat = dat[(dat["Hs"] >= abnormal_min) & (dat["Hs"] <= abnormal_max)]
-            print(f"Data size after abnormal value removal: {len(dat)}")  # ✅ Debugging line
-
-            # Plot raw data
-            ax.plot(dat["Date"], dat["Hs"], label="Raw Data", color='red')
 
             # Compute rolling mean and filter data
             dat['rolling_mean'] = dat["Hs"].rolling(window=window, center=True).mean()
             dat['diff'] = np.abs(dat["Hs"] - dat['rolling_mean'])
-            filtered_dat = dat[dat['diff'] <= threshold]
-            print(f"Data size after spike removal: {len(filtered_dat)}")  # ✅ Debugging line
+            filtered_data = dat[dat['diff'] <= threshold]  # Filter spikes
 
             # Plot filtered data
-            ax.plot(filtered_dat["Date"], filtered_dat["Hs"], label="Filtered Data", color='blue')
+            ax.plot(dat["Date"], dat["Hs"], label="Raw Data", color='red')
+            ax.plot(filtered_data["Date"], filtered_data["Hs"], label="Filtered Data", color='blue')
 
             # Customize plot
             ax.set_xlabel("Date")
@@ -49,11 +46,11 @@ def remove_spike(files, window=2, threshold=0.1, abnormal_max=5, abnormal_min=0)
             plot_filename = f"plot_{os.path.basename(file)}.png"
             plot_path = os.path.join(PLOT_FOLDER, plot_filename)
             plt.savefig(plot_path)
-            plt.close(fig)  # ✅ Close figure to free memory
+            plt.close(fig)  # Close figure to free memory
 
             plot_files.append(plot_filename)
         except Exception as e:
             print(f"Error processing {file}: {e}")
             continue
 
-    return plot_files  # Return list of saved plot filenames
+    return plot_files, filtered_data  # Return list of saved plot filenames and filtered data
