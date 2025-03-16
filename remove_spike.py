@@ -20,8 +20,8 @@ def remove_spike(files, window=2, threshold=0.1, abnormal_max=5, abnormal_min=0)
             fig, ax = plt.subplots(figsize=(16, 6))
 
             # Read data
-            dat = pd.read_csv(file, header=None)
-            dat = dat.rename(columns={0: "Date", 1: "Hs"})
+            dat = pd.read_csv(file, header=0)
+            dat = dat.rename(columns={"Timestamp": "Date", " Hm0": "Hs"})
             dat["Date"] = pd.to_datetime(dat["Date"])
 
             # Remove abnormal values
