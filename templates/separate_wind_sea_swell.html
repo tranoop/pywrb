@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Separate Wind Sea and Swell</title>
+    <style>
+        .message { font-weight: bold; margin-bottom: 10px; }
+        .message.success { color: green; }
+        .message.error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Separate Wind Sea and Swell</h1>
+
+    {% if message %}
+        <p class="message {% if 'Error' in message %}error{% else %}success{% endif %}">{{ message }}</p>
+    {% endif %}
+
+    <form action="/separate_wind_sea_swell" method="post" enctype="multipart/form-data" onsubmit="submitForm(event, this)">
+        <label for="nc_files">Select .nc Files:</label>
+        <input type="file" id="nc_files" name="nc_files" accept=".nc" multiple required>
+        <br><br>
+        <input type="submit" value="Separate Wind Sea and Swell">
+    </form>
+
+    {% if output_files %}
+        <h2>Download Results:</h2>
+        <ul>
+            {% for file in output_files %}
+                <li><a href="{{ url_for('download', filename=basename(file)) }}" download>{{ basename(file) }}</a></li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <script>
+        function submitForm(event, form) {
+            event.preventDefault();
+            document.getElementById('loader').style.display = 'block';
+
+            fetch(form.action, {
+                method: form.method,
+                body: new FormData(form)
+            })
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('dynamic-content').innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('dynamic-content').innerHTML = '<p>Error processing request.</p>';
+            });
+        }
+    </script>
+</body>
+</html>
