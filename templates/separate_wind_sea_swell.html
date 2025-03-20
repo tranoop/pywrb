@@ -7,6 +7,8 @@
         .message { font-weight: bold; margin-bottom: 10px; }
         .message.success { color: green; }
         .message.error { color: red; }
+        .download-all-btn { margin-top: 10px; padding: 10px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .download-all-btn:hover { background-color: #45a049; }
     </style>
 </head>
 <body>
@@ -30,6 +32,7 @@
                 <li><a href="{{ url_for('download', filename=basename(file)) }}" download>{{ basename(file) }}</a></li>
             {% endfor %}
         </ul>
+        <button class="download-all-btn" onclick="window.location.href='{{ url_for('download_all_wind_sea_swell') }}'">Download All as ZIP</button>
     {% endif %}
 
     <script>

@@ -308,5 +308,24 @@ def separate_wind_sea_swell():
                 os.rmdir(temp_folder)
 
     return render_template('separate_wind_sea_swell.html')
+@app.route('/download_all_wind_sea_swell')
+def download_all_wind_sea_swell():
+    """Create and serve a ZIP file containing all wind-sea-swell separated CSV files."""
+    csv_files = [f for f in os.listdir(PROCESSED_FOLDER) if f.endswith('_windsea_swell.csv')]
+    
+    if not csv_files:
+        return "<p style='color: red;'>No wind-sea-swell separated CSV files available to download.</p>", 400
+
+    zip_path = os.path.join(PROCESSED_FOLDER, "windsea_swell_files.zip")
+    
+    try:
+        with zipfile.ZipFile(zip_path, 'w') as zipf:
+            for file in csv_files:
+                file_path = os.path.join(PROCESSED_FOLDER, file)
+                zipf.write(file_path, file)
+        
+        return send_file(zip_path, as_attachment=True)
+    except Exception as e:
+        return f"<p style='color: red;'>Error creating ZIP file: {e}</p>", 500
 if __name__ == '__main__':
     app.run(debug=True)
