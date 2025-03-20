@@ -10,19 +10,19 @@ import zipfile
 import matplotlib.pyplot as plt
 from io import BytesIO
 from datetime import datetime
-
+from windsea_swell_seperation import windsea_swell_seperation  # Import the wind-sea-swell separation function
+from os import path
 
 
 # Flask app setup
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'  # Required for session handling
 
-
 # Define folders for uploads and processed files
 UPLOAD_FOLDER = "uploads"
 PROCESSED_FOLDER = "processed"
 CONVERTED_FOLDER = "converted_nc_files"
-TEMP_SPT_FOLDER= "temp_spt_files"
+TEMP_SPT_FOLDER = "temp_spt_files"
 PLOT_FOLDER = "static/plots"  # ✅ This was missing before!
 
 # Ensure folders exist
@@ -161,7 +161,6 @@ def convert_spt():
 
     return render_template('convert_spt.html')
 
-
 @app.route('/download_nc_all')
 def download_nc_all():
     """Create and serve a ZIP file containing all converted NetCDF files."""
@@ -181,11 +180,12 @@ def download_nc_all():
         return send_file(zip_path, as_attachment=True)
     except Exception as e:
         return f"<p style='color: red;'>Error creating ZIP file: {e}</p>", 500
+
 @app.route('/delete_all', methods=['POST'])
 def delete_all():
     """Delete all files in uploads, processed, and converted folders."""
     try:
-        for folder in [UPLOAD_FOLDER, PROCESSED_FOLDER, CONVERTED_FOLDER,TEMP_SPT_FOLDER, PLOT_FOLDER]:
+        for folder in [UPLOAD_FOLDER, PROCESSED_FOLDER, CONVERTED_FOLDER, TEMP_SPT_FOLDER, PLOT_FOLDER]:
             for file in os.listdir(folder):
                 file_path = os.path.join(folder, file)
                 os.remove(file_path)
@@ -193,12 +193,9 @@ def delete_all():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
-
 @app.route('/remove_spike', methods=['GET', 'POST'])
 def remove_spike_route():
     """Handle spike removal functionality with persistent file storage for trial and error."""
-    
     file_path = session.get('uploaded_his_file')  # Retrieve stored file path
     processed_file_path = None  # File path for downloading the processed file
 
@@ -259,5 +256,57 @@ def download_spike_removed(filename):
         return send_file(processed_file_path, as_attachment=True)
     else:
         return "<p style='color: red;'>Processed file not found!</p>", 404
+
+@app.route('/separate_wind_sea_swell', methods=['GET', 'POST'])
+def separate_wind_sea_swell():
+    """Handle wind-sea-swell separation functionality."""
+    if request.method == 'POST':
+        # Get uploaded files
+        uploaded_files = request.files.getlist('nc_files')
+        
+        if not uploaded_files or all(file.filename == '' for file in uploaded_files):
+            return render_template('separate_wind_sea_swell.html', message="No files selected!")
+
+        # Save uploaded files to a temporary folder
+        temp_folder = os.path.join(UPLOAD_FOLDER, "temp_nc_files")
+        os.makedirs(temp_folder, exist_ok=True)
+        
+        saved_files = []
+        for file in uploaded_files:
+            if file and file.filename.endswith('.nc'):
+                filepath = os.path.join(temp_folder, file.filename)
+                file.save(filepath)
+                saved_files.append(filepath)
+
+        if not saved_files:
+            return render_template('separate_wind_sea_swell.html', message="No valid .nc files uploaded!")
+
+        try:
+            # Call the windsea_swell_seperation function
+            saved_csv_files = windsea_swell_seperation(temp_folder)
+            
+            # Move CSV files to the PROCESSED_FOLDER
+            for csv_file in saved_csv_files:
+                filename = os.path.basename(csv_file)
+                new_path = os.path.join(PROCESSED_FOLDER, filename)
+                os.rename(csv_file, new_path)
+            
+            return render_template(
+                'separate_wind_sea_swell.html',
+                message="Wind-sea-swell separation completed!",
+                output_files=saved_csv_files,
+                basename=path.basename  # Pass the basename function to the template
+            )
+        except Exception as e:
+            return render_template('separate_wind_sea_swell.html', message=f"Error during processing: {e}")
+        finally:
+            # Clean up temporary files
+            for file in saved_files:
+                if os.path.exists(file):
+                    os.remove(file)
+            if os.path.exists(temp_folder):
+                os.rmdir(temp_folder)
+
+    return render_template('separate_wind_sea_swell.html')
 if __name__ == '__main__':
     app.run(debug=True)
