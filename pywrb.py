@@ -183,16 +183,16 @@ def download_nc_all():
 
 @app.route('/delete_all', methods=['POST'])
 def delete_all():
-    """Delete all files in uploads, processed, and converted folders."""
+    """Delete all automatically generated files in processed, converted, temp_spt, and plot folders."""
     try:
-        for folder in [UPLOAD_FOLDER, PROCESSED_FOLDER, CONVERTED_FOLDER, TEMP_SPT_FOLDER, PLOT_FOLDER]:
+        # Only delete files in folders created/managed by the script, not user uploads
+        for folder in [PROCESSED_FOLDER, CONVERTED_FOLDER, TEMP_SPT_FOLDER, PLOT_FOLDER]:
             for file in os.listdir(folder):
                 file_path = os.path.join(folder, file)
                 os.remove(file_path)
-        return jsonify({"message": "All files deleted successfully!"}), 200
+        return jsonify({"message": "Automatically generated files deleted successfully!"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 @app.route('/remove_spike', methods=['GET', 'POST'])
 def remove_spike_route():
     """Handle spike removal functionality with persistent file storage for trial and error."""
