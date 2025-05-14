@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Stokes Drift Calculation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        form {
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="file"], input[type="number"] {
+            margin-bottom: 15px;
+            padding: 8px;
+            width: 100%;
+            max-width: 400px;
+        }
+        input[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+        .message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        .error {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+        .file-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .file-list li {
+            margin: 5px 0;
+        }
+        .file-list a {
+            color: #337ab7;
+            text-decoration: none;
+        }
+        .file-list a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>Stokes Drift Calculation</h1>
+    <form id="stokesForm" action="/stokes_drift" method="post" enctype="multipart/form-data" onsubmit="submitForm(event, 'stokesForm')">
+        <div>
+            <label for="nc_files">Select NetCDF files:</label>
+            <input type="file" name="nc_files" accept=".nc" multiple required>
+        </div>
+        <div>
+            <label for="max_depth">Maximum Depth (m):</label>
+            <input type="number" name="max_depth" value="100" min="1" required>
+        </div>
+        <input type="submit" value="Calculate Stokes Drift">
+    </form>
+
+    {% if message %}
+        <div class="message {% if message.startswith('Error') %}error{% else %}success{% endif %}">
+            {{ message }}
+        </div>
+    {% endif %}
+
+    {% if processed_files %}
+        <h2>Processed Files:</h2>
+        <ul class="file-list">
+            {% for file in processed_files %}
+                <li><a href="{{ url_for('download_stokes', filename=file) }}">{{ file }}</a></li>
+            {% endfor %}
+        </ul>
+        <a href="{{ url_for('download_all_stokes') }}">
+            <button>Download All Files (ZIP)</button>
+        </a>
+    {% endif %}
+
+    <script>
+        function submitForm(event, formId) {
+            event.preventDefault();
+            let form = document.getElementById(formId);
+            let formData = new FormData(form);
+            let loader = document.getElementById('loader');
+            if (loader) loader.style.display = 'block';
+
+            fetch(form.action, {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.text())
+            .then(html => {
+                if (loader) loader.style.display = 'none';
+                document.getElementById('dynamic-content').innerHTML = html;
+            })
+            .catch(error => {
+                if (loader) loader.style.display = 'none';
+                console.error("Error:", error);
+                document.getElementById('dynamic-content').innerHTML = "<p>Error processing request.</p>";
+            });
+        }
+    </script>
+</body>
+</html>

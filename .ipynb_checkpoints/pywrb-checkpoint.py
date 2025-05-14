@@ -12,7 +12,6 @@ from io import BytesIO
 from datetime import datetime
 from windsea_swell_seperation import windsea_swell_seperation  # Import the wind-sea-swell separation function
 from os import path
-from calculate_drift_velocity import calculate_drift_velocity
 
 
 # Flask app setup
@@ -322,77 +321,6 @@ def download_all_wind_sea_swell():
     try:
         with zipfile.ZipFile(zip_path, 'w') as zipf:
             for file in csv_files:
-                file_path = os.path.join(PROCESSED_FOLDER, file)
-                zipf.write(file_path, file)
-        
-        return send_file(zip_path, as_attachment=True)
-    except Exception as e:
-        return f"<p style='color: red;'>Error creating ZIP file: {e}</p>", 500
-@app.route('/stokes_drift', methods=['GET', 'POST'])
-def stokes_drift():
-    if request.method == 'POST':
-        uploaded_files = request.files.getlist('nc_files')
-        max_depth = int(request.form.get('max_depth', 100))
-        
-        if not uploaded_files or all(file.filename == '' for file in uploaded_files):
-            return render_template('stokes_drift.html', message="No NetCDF files selected!")
-
-        processed_files = []
-        temp_folder = os.path.join(UPLOAD_FOLDER, "temp_stokes")
-        os.makedirs(temp_folder, exist_ok=True)
-
-        try:
-            # Save uploaded files
-            for file in uploaded_files:
-                if file and file.filename.endswith('.nc'):
-                    file_path = os.path.join(temp_folder, file.filename)
-                    file.save(file_path)
-                    
-                    # Calculate drift velocity
-                    result = calculate_drift_velocity(file_path, max_depth)
-                    
-                    # Save results
-                    output_filename = f"stokes_drift_{os.path.splitext(file.filename)[0]}.csv"
-                    output_path = os.path.join(PROCESSED_FOLDER, output_filename)
-                    result.to_csv(output_path, index=False)
-                    processed_files.append(output_filename)
-
-            if processed_files:
-                return render_template('stokes_drift.html', 
-                                    message="Stokes drift calculation completed!",
-                                    processed_files=processed_files)
-            else:
-                return render_template('stokes_drift.html', 
-                                    message="No valid NetCDF files were processed.")
-        except Exception as e:
-            return render_template('stokes_drift.html', 
-                                message=f"Error during processing: {str(e)}")
-        finally:
-            # Clean up temporary files
-            for file in os.listdir(temp_folder):
-                os.remove(os.path.join(temp_folder, file))
-            os.rmdir(temp_folder)
-
-    return render_template('stokes_drift.html')
-
-@app.route('/download_stokes/<filename>')
-def download_stokes(filename):
-    """Download individual stokes drift CSV file"""
-    return send_from_directory(PROCESSED_FOLDER, filename, as_attachment=True)
-
-@app.route('/download_all_stokes')
-def download_all_stokes():
-    """Create and serve a ZIP file containing all stokes drift CSV files"""
-    stokes_files = [f for f in os.listdir(PROCESSED_FOLDER) if f.startswith('stokes_drift_')]
-    
-    if not stokes_files:
-        return "<p style='color: red;'>No stokes drift files available to download.</p>", 400
-
-    zip_path = os.path.join(PROCESSED_FOLDER, "stokes_drift_files.zip")
-    
-    try:
-        with zipfile.ZipFile(zip_path, 'w') as zipf:
-            for file in stokes_files:
                 file_path = os.path.join(PROCESSED_FOLDER, file)
                 zipf.write(file_path, file)
         
