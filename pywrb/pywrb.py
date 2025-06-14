@@ -1,3 +1,6 @@
+
+import webbrowser
+from threading import Timer
 from flask import (Flask, render_template, request, send_from_directory, 
                   send_file, url_for, session, jsonify, current_app)
 import os
@@ -46,7 +49,9 @@ def create_app():
     register_routes(app)
 
     return app
-
+def open_browser():
+    """Open the default browser to the Flask app URL"""
+    webbrowser.open_new('http://127.0.0.1:5000/')
 def register_routes(app):
     """Register all route blueprints with the application"""
     
@@ -353,6 +358,10 @@ def register_routes(app):
 def main():
     """Entry point for running the application"""
     app = create_app()
+    
+    # Open browser after 1 second delay
+    Timer(1, open_browser).start()
+    
     app.run(debug=True)
 
 if __name__ == '__main__':
