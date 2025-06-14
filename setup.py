@@ -1,4 +1,3 @@
-# setup.py
 from setuptools import setup, find_packages
 
 with open("README.md", "r", encoding="utf-8") as fh:
@@ -6,19 +5,19 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="pywrb",
-    version="0.1.0",  # Ensure this is a valid version string
+    version="0.1.0",
     author="Your Name",
     author_email="your.email@example.com",
     description="A Python module for processing wave data files.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/tranoop/pywrb",
+    url="https://github.com/yourusername/pywrb",
     packages=find_packages(),
-    include_package_data=True,  # Include non-Python files (e.g., templates, static files)
+    include_package_data=True,
     package_data={
-        "pywrb": [
-            "templates/*",  # Include all files in the templates directory
-            "static/*",     # Include all files in the static directory
+        'pywrb': [
+            'templates/*.html',
+            'static/plots/*',
         ],
     },
     install_requires=[
@@ -27,6 +26,7 @@ setup(
         "numpy",
         "xarray",
         "matplotlib",
+        "netCDF4",
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
@@ -35,8 +35,8 @@ setup(
     ],
     python_requires=">=3.6",
     entry_points={
-        "console_scripts": [
-            "pywrb=pywrb:app.run",  # Command-line executable
+        'console_scripts': [
+            'pywrb=pywrb.pywrb:main',
         ],
     },
 )

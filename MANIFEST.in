@@ -1,0 +1,3 @@
+include README.md
+recursive-include pywrb/templates *.html
+recursive-include pywrb/static *
