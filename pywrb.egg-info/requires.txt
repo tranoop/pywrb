@@ -1,6 +1,6 @@
 flask
+pandas
+numpy
+xarray
 matplotlib
 netCDF4
-numpy
-pandas
-xarray

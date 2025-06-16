@@ -50,8 +50,9 @@ def create_app():
 
     return app
 def open_browser():
-    """Open the default browser to the Flask app URL"""
-    webbrowser.open_new('http://127.0.0.1:5000/')
+    """Open the browser only if we're in the main thread"""
+    if not os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
+        webbrowser.open_new('http://127.0.0.1:5000/')
 def register_routes(app):
     """Register all route blueprints with the application"""
     
@@ -354,15 +355,19 @@ def register_routes(app):
             return send_file(zip_path, as_attachment=True)
         except Exception as e:
             return f"<p style='color: red;'>Error creating ZIP file: {e}</p>", 500
-
+    pass
 def main():
     """Entry point for running the application"""
     app = create_app()
     
-    # Open browser after 1 second delay
-    Timer(1, open_browser).start()
+    # Open browser after slight delay, only in main process
+    if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
+        Timer(1.5, open_browser).start()  # Increased delay to 1.5 seconds
     
     app.run(debug=True)
 
 if __name__ == '__main__':
-    main()
+    # This ensures browser only opens once when running directly
+    Timer(2, open_browser).start()  # Slightly longer delay for direct execution
+    app = create_app()
+    app.run(debug=True)

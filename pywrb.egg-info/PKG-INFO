@@ -5,18 +5,20 @@ Summary: A Python module for processing wave data files.
 Home-page: https://github.com/yourusername/pywrb
 Author: Your Name
 Author-email: your.email@example.com
-License: UNKNOWN
-Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 3
 Classifier: License :: OSI Approved :: MIT License
 Classifier: Operating System :: OS Independent
 Requires-Python: >=3.6
 Description-Content-Type: text/markdown
+Requires-Dist: flask
+Requires-Dist: pandas
+Requires-Dist: numpy
+Requires-Dist: xarray
+Requires-Dist: matplotlib
+Requires-Dist: netCDF4
 
 # pywrb
 
 This is the beta version of a tool for processing Datawell directional wave rider buoy chip data. Currently, it supports the processing of SDT files from the MKIII buoy. The SDT files can be processed to extract buoy spectra and history files, which can then be downloaded. Additionally, the spectral data can be converted to NetCDF format for easier access. A preliminary data quality check has also been incorporated.
 
 I am actively working on improving this tool, and I would greatly appreciate your valuable suggestions and feedback. Please feel free to reach out at anoopoceanography@gmail.com. If anyone is interested in collaborating on this project, I would be happy to discuss further.
-
-
