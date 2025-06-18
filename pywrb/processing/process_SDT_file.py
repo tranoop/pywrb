@@ -67,7 +67,7 @@ def read_header(fid):
 
 def parse_timestamp(tms):
     """Parse timestamp bytes into a datetime object."""
-    year = tms[0] * 256 + tms[1]
+    year = int(tms[0]) * 256 + int(tms[1])
     month = tms[2]
     day = tms[3]
     hour = tms[4]
@@ -88,56 +88,63 @@ def calculate_checksum(data):
         cs ^= data[j]
     return cs
 
+# All content unchanged above...
+
 def parse_system_data(bsys):
     """Parse system data bytes into meaningful parameters."""
-    global Smax,Lat,Lon
-    GPS = (bsys[1] // 16) % 8
-    Hm0 = ((bsys[2] * 256 + bsys[3]) % 4096) / 100
-    Tz = 400 / ((bsys[4] * 256 + bsys[5]) % 256)
-    Smax = np.exp(-0.005 * ((bsys[6] * 256 + bsys[7]) % 4096)) * 5000
-    Tref = ((bsys[8] * 256 + bsys[9]) % 1024) / 20 - 5
-    Tsea = ((bsys[10] * 256 + bsys[11]) % 1024) / 20 - 5
-    Bat = bsys[12] % 8
-    BLE = ((bsys[12] * 256 + bsys[13]) // 16) % 256
-    Av = (bsys[14] * 256 + bsys[15]) % 4096
+    global Smax, Lat, Lon
+
+    GPS = (int(bsys[1]) // 16) % 8
+    Hm0 = ((int(bsys[2]) * 256 + int(bsys[3])) % 4096) / 100
+    Tz = 400 / ((int(bsys[4]) * 256 + int(bsys[5])) % 256)
+    Smax = np.exp(-0.005 * ((int(bsys[6]) * 256 + int(bsys[7])) % 4096)) * 5000
+    Tref = ((int(bsys[8]) * 256 + int(bsys[9])) % 1024) / 20 - 5
+    Tsea = ((int(bsys[10]) * 256 + int(bsys[11])) % 1024) / 20 - 5
+    Bat = int(bsys[12]) % 8
+    BLE = ((int(bsys[12]) * 256 + int(bsys[13])) // 16) % 256
+    Av = (int(bsys[14]) * 256 + int(bsys[15])) % 4096
     Av = (2048 - Av if Av > 2048 else Av) / 800
-    Ax = (bsys[16] * 256 + bsys[17]) % 4096
+    Ax = (int(bsys[16]) * 256 + int(bsys[17])) % 4096
     Ax = (2048 - Ax if Ax > 2048 else Ax) / 800
-    Ay = (bsys[18] * 256 + bsys[19]) % 4096
+    Ay = (int(bsys[18]) * 256 + int(bsys[19])) % 4096
     Ay = (2048 - Ay if Ay > 2048 else Ay) / 800
-    Lat = (((bsys[20] % 16) * 256 + bsys[21]) * 16 + (bsys[22] % 16)) * 256 + bsys[23]
+
+    Lat = (((int(bsys[20]) % 16) * 256 + int(bsys[21])) * 16 + (int(bsys[22]) % 16)) * 256 + int(bsys[23])
     Lat = (Lat % (2**24)) / (2**23) * 90
     Lat = 90 - Lat if Lat > 90 else Lat
-    Lon = (((bsys[24] % 16) * 256 + bsys[25]) * 16 + (bsys[26] % 16)) * 256 + bsys[27]
+
+    Lon = (((int(bsys[24]) % 16) * 256 + int(bsys[25])) * 16 + (int(bsys[26]) % 16)) * 256 + int(bsys[27])
     Lon = (Lon % (2**24)) / (2**23) * 180
     Lon = 180 - Lon if Lon > 180 else Lon
-    ori = ((bsys[28] * 256 + bsys[29]) % 4096) * 360 / 256
-    incl = (bsys[31] + (bsys[30] % 16) / 16) * 360 / 256 / 2 - 90
-    
+
+    ori = ((int(bsys[28]) * 256 + int(bsys[29])) % 4096) * 360 / 256
+    incl = (int(bsys[31]) + (int(bsys[30]) % 16) / 16) * 360 / 256 / 2 - 90
+
     return [Hm0, Tz, Smax, Tref, Tsea, Bat, BLE, Av, Ax, Ay, GPS, Lat, Lon, ori, incl]
 
 def parse_spectral_data(bspt):
     """Parse spectral data bytes into a structured format."""
     spt = []
     for j in range(0, len(bspt), 8):
-        jf = bspt[j] % 64
+        jf = int(bspt[j]) % 64
         frq = jf * 0.005 + 0.025 if jf < 16 else jf * 0.01 - 0.05
-        sprlsb = bspt[j] // 64
-        dir_angle = bspt[j + 1] * 360 / 256
-        psd = np.exp(-0.005 * ((bspt[j + 2] * 256 + bspt[j + 3]) % 4096))
-        n2lsb = (bspt[j + 2] // 16) % 4
-        m2lsb = bspt[j + 2] // 64
-        spr = (bspt[j + 4] + sprlsb / 4) * 360 / 256 / np.pi
-        m2 = (bspt[j + 5] + m2lsb / 4) / 128 - 1
-        n2 = (bspt[j + 6] + n2lsb / 4) / 128 - 1
-        K = bspt[j + 7] * 0.01
+        sprlsb = int(bspt[j]) // 64
+        dir_angle = int(bspt[j + 1]) * 360 / 256
+        psd = np.exp(-0.005 * ((int(bspt[j + 2]) * 256 + int(bspt[j + 3])) % 4096))
+        n2lsb = (int(bspt[j + 2]) // 16) % 4
+        m2lsb = int(bspt[j + 2]) // 64
+        spr = (int(bspt[j + 4]) + sprlsb / 4) * 360 / 256 / np.pi
+        m2 = (int(bspt[j + 5]) + m2lsb / 4) / 128 - 1
+        n2 = (int(bspt[j + 6]) + n2lsb / 4) / 128 - 1
+        K = int(bspt[j + 7]) * 0.01
         sgmc = spr * np.pi / 180
         m1 = 1 - sgmc**2 / 2
         sgmca = np.sqrt((1 - m2) / 2)
         skw = -n2 / sgmca**3
         kurt = (6 - 8 * m1 + 2 * m2) / sgmc**4
-        spt.append([frq, Smax * psd, dir_angle, spr,skw,kurt, m2, n2, K, Lat, Lon])
+        spt.append([frq, Smax * psd, dir_angle, spr, skw, kurt, m2, n2, K, Lat, Lon])
     return spt
+
 
 def calculate_moments(spt):
     """Calculate statistical moments from spectral data."""
