@@ -1,9 +1,7 @@
-
+import os
+from flask import Flask, render_template, request, send_from_directory, send_file, url_for, session, jsonify, current_app
 import webbrowser
 from threading import Timer
-from flask import (Flask, render_template, request, send_from_directory, 
-                  send_file, url_for, session, jsonify, current_app)
-import os
 import pandas as pd
 import numpy as np
 import glob
@@ -22,17 +20,28 @@ from .processing.calculate_drift_velocity import calculate_drift_velocity
 
 def create_app():
     """Factory function to create and configure the Flask application"""
-    app = Flask(__name__)
+    # Get the absolute path of the parent directory of pywrb.py
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    app = Flask(__name__, static_folder=os.path.join(base_dir, 'static'))
     app.secret_key = 'supersecretkey'
-
+    
     # Configuration
     app.config.update({
-        'UPLOAD_FOLDER': os.path.join(os.getcwd(), 'uploads'),
-        'PROCESSED_FOLDER': os.path.join(os.getcwd(), 'processed'),
-        'CONVERTED_FOLDER': os.path.join(os.getcwd(), 'converted_nc_files'),
-        'TEMP_SPT_FOLDER': os.path.join(os.getcwd(), 'temp_spt_files'),
-        'PLOT_FOLDER': os.path.join(os.getcwd(), 'static', 'plots')
+        'UPLOAD_FOLDER': os.path.join(base_dir, 'Uploads'),
+        'PROCESSED_FOLDER': os.path.join(base_dir, 'processed'),
+        'CONVERTED_FOLDER': os.path.join(base_dir, 'converted_nc_files'),
+        'TEMP_SPT_FOLDER': os.path.join(base_dir, 'temp_spt_files'),
+        'PLOT_FOLDER': os.path.join(base_dir, 'static', 'plots')
     })
+
+    # Debug: Print all folder paths
+    print("Base directory:", base_dir)
+    print("Static folder:", app.static_folder)
+    print("UPLOAD_FOLDER:", app.config['UPLOAD_FOLDER'])
+    print("PROCESSED_FOLDER:", app.config['PROCESSED_FOLDER'])
+    print("CONVERTED_FOLDER:", app.config['CONVERTED_FOLDER'])
+    print("TEMP_SPT_FOLDER:", app.config['TEMP_SPT_FOLDER'])
+    print("PLOT_FOLDER:", app.config['PLOT_FOLDER'])
 
     # Ensure directories exist
     with app.app_context():
@@ -43,16 +52,22 @@ def create_app():
             current_app.config['TEMP_SPT_FOLDER'],
             current_app.config['PLOT_FOLDER']
         ]:
-            os.makedirs(folder, exist_ok=True)
+            try:
+                os.makedirs(folder, exist_ok=True)
+                print(f"Created/Verified folder: {folder}")
+            except Exception as e:
+                print(f"Failed to create folder {folder}: {e}")
 
     # Register routes
     register_routes(app)
 
     return app
+
 def open_browser():
     """Open the browser only if we're in the main thread"""
     if not os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
         webbrowser.open_new('http://127.0.0.1:5000/')
+
 def register_routes(app):
     """Register all route blueprints with the application"""
     
@@ -67,19 +82,30 @@ def register_routes(app):
             if not files or all(file.filename == '' for file in files):
                 return "<p style='color: red;'>No files selected!</p>", 400
 
+            # Ensure UPLOAD_FOLDER exists
+            os.makedirs(current_app.config['UPLOAD_FOLDER'], exist_ok=True)
             uploaded_files = []
             for file in files:
                 if file and file.filename.endswith('.SDT'):
                     filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], file.filename)
-                    file.save(filepath)
-                    uploaded_files.append(file.filename)
+                    try:
+                        file.save(filepath)
+                        print(f"Saved file to: {filepath}")
+                        uploaded_files.append(file.filename)
+                    except Exception as e:
+                        print(f"Failed to save file {file.filename}: {e}")
+                        return f"<p style='color: red;'>Error saving file {file.filename}: {e}</p>", 500
 
             return "<p>Files uploaded successfully: " + ", ".join(uploaded_files) + "</p>"
         return render_template('upload.html')
 
     @app.route('/process', methods=['GET', 'POST'])
     def process():
-        files = os.listdir(current_app.config['UPLOAD_FOLDER'])
+        try:
+            files = os.listdir(current_app.config['UPLOAD_FOLDER'])
+        except FileNotFoundError:
+            files = []
+            print(f"UPLOAD_FOLDER not found: {current_app.config['UPLOAD_FOLDER']}")
         
         if request.method == 'POST':
             selected_files = request.form.getlist('files[]')
@@ -139,7 +165,12 @@ def register_routes(app):
             # Save uploaded files
             for file in uploaded_files:
                 file_path = os.path.join(current_app.config['TEMP_SPT_FOLDER'], file.filename)
-                file.save(file_path)
+                try:
+                    file.save(file_path)
+                    print(f"Saved file to: {file_path}")
+                except Exception as e:
+                    print(f"Failed to save file {file.filename}: {e}")
+                    return render_template('convert_spt.html', message=f"Error saving file {file.filename}: {e}")
 
             try:
                 convert_spt_to_nc(current_app.config['TEMP_SPT_FOLDER'], current_app.config['CONVERTED_FOLDER'])
@@ -179,9 +210,10 @@ def register_routes(app):
                 current_app.config['UPLOAD_FOLDER'],
                 current_app.config['PLOT_FOLDER']
             ]:
-                for file in os.listdir(folder):
-                    file_path = os.path.join(folder, file)
-                    os.remove(file_path)
+                if os.path.exists(folder):
+                    for file in os.listdir(folder):
+                        file_path = os.path.join(folder, file)
+                        os.remove(file_path)
             return jsonify({"message": "Automatically generated files deleted successfully!"}), 200
         except Exception as e:
             return jsonify({"error": str(e)}), 500
@@ -192,25 +224,38 @@ def register_routes(app):
         if request.method == 'POST':
             uploaded_files = request.files.getlist('his_files')
             if uploaded_files and uploaded_files[0].filename != '':
+                # Ensure UPLOAD_FOLDER exists
+                os.makedirs(current_app.config['UPLOAD_FOLDER'], exist_ok=True)
                 file = uploaded_files[0]
                 file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], file.filename)
-                file.save(file_path)
+                try:
+                    file.save(file_path)
+                    print(f"Saved file to: {file_path}")
+                except Exception as e:
+                    print(f"Failed to save file {file.filename}: {e}")
+                    return render_template('remove_spike.html', message=f"Error: Failed to save file - {e}")
+
                 session['uploaded_his_file'] = file_path
 
             if not file_path or not os.path.exists(file_path):
-                return render_template('remove_spike.html', message="Error: No file uploaded!")
+                return render_template('remove_spike.html', message="Error: No file uploaded or file not found!")
 
             try:
                 window = int(request.form.get('window', 2))
                 threshold = float(request.form.get('threshold', 0.1))
                 abnormal_max = float(request.form.get('abnormal_max', 5))
                 abnormal_min = float(request.form.get('abnormal_min', 0))
-                plot_files, filtered_data = remove_spike([file_path],window, threshold, abnormal_max, abnormal_min, current_app.config['PLOT_FOLDER'])
+                plot_files, filtered_data = remove_spike([file_path], window, threshold, abnormal_max, abnormal_min, current_app.config['PLOT_FOLDER'])
                 processed_filename = f"processed_{os.path.basename(file_path)}.csv"
                 processed_file_path = os.path.join(current_app.config['PROCESSED_FOLDER'], processed_filename)
                 filtered_data.to_csv(processed_file_path, index=False)
 
                 plot_urls = [f"{url_for('static', filename=f'plots/{p}')}?t={datetime.now().timestamp()}" for p in plot_files]
+                #print("Plot URLs:", plot_urls)
+                print("Plot files exist:", [os.path.exists(os.path.join(current_app.config['PLOT_FOLDER'], p)) for p in plot_files])
+
+                if not plot_urls:
+                    print("Warning: No plots generated. Check remove_spike function.")
 
                 return render_template(
                     'remove_spike.html',
@@ -224,6 +269,7 @@ def register_routes(app):
                     processed_filename=processed_filename
                 )
             except Exception as e:
+                print(f"Error in remove_spike_route: {e}")
                 return render_template('remove_spike.html', message=f"Error: {e}")
 
         return render_template('remove_spike.html', window=2, threshold=0.1, abnormal_max=5, abnormal_min=0)
@@ -249,8 +295,12 @@ def register_routes(app):
             for file in uploaded_files:
                 if file and file.filename.endswith('.nc'):
                     filepath = os.path.join(temp_folder, file.filename)
-                    file.save(filepath)
-                    saved_files.append(filepath)
+                    try:
+                        file.save(filepath)
+                        print(f"Saved file to: {filepath}")
+                        saved_files.append(filepath)
+                    except Exception as e:
+                        print(f"Failed to save file {file.filename}: {e}")
 
             if not saved_files:
                 return render_template('separate_wind_sea_swell.html', message="No valid .nc files uploaded!")
@@ -312,7 +362,12 @@ def register_routes(app):
                 for file in uploaded_files:
                     if file and file.filename.endswith('.nc'):
                         file_path = os.path.join(temp_folder, file.filename)
-                        file.save(file_path)
+                        try:
+                            file.save(file_path)
+                            print(f"Saved file to: {file_path}")
+                        except Exception as e:
+                            print(f"Failed to save file {file.filename}: {e}")
+                            continue
                         result = calculate_drift_velocity(file_path, max_depth)
                         output_filename = f"stokes_drift_{os.path.splitext(file.filename)[0]}.csv"
                         output_path = os.path.join(current_app.config['PROCESSED_FOLDER'], output_filename)
@@ -321,17 +376,18 @@ def register_routes(app):
 
                 if processed_files:
                     return render_template('stokes_drift.html', 
-                                        message="Stokes drift calculation completed!",
-                                        processed_files=processed_files)
+                                          message="Stokes drift calculation completed!",
+                                          processed_files=processed_files)
                 return render_template('stokes_drift.html', 
-                                    message="No valid NetCDF files were processed.")
+                                      message="No valid NetCDF files were processed.")
             except Exception as e:
                 return render_template('stokes_drift.html', 
-                                    message=f"Error during processing: {str(e)}")
+                                      message=f"Error during processing: {str(e)}")
             finally:
                 for file in os.listdir(temp_folder):
                     os.remove(os.path.join(temp_folder, file))
-                os.rmdir(temp_folder)
+                if os.path.exists(temp_folder):
+                    os.rmdir(temp_folder)
 
         return render_template('stokes_drift.html')
 
@@ -354,19 +410,27 @@ def register_routes(app):
             return send_file(zip_path, as_attachment=True)
         except Exception as e:
             return f"<p style='color: red;'>Error creating ZIP file: {e}</p>", 500
-    pass
+
+    @app.route('/test_static')
+    def test_static():
+        static_path = os.path.join(current_app.config['PLOT_FOLDER'], 'plot_Vizag_000003_S09-2009.png')
+        print("Testing static file at:", static_path)
+        print("File exists:", os.path.exists(static_path))
+        if os.path.exists(static_path):
+            return send_from_directory(current_app.config['PLOT_FOLDER'], 'plot_Vizag_000003_S09-2009.png')
+        return "File not found", 404
+
 def main():
     """Entry point for running the application"""
     app = create_app()
     
     # Open browser after slight delay, only in main process
     if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
-        Timer(1.5, open_browser).start()  # Increased delay to 1.5 seconds
+        Timer(1.5, open_browser).start()
     
     app.run(debug=True)
 
 if __name__ == '__main__':
-    # This ensures browser only opens once when running directly
-    Timer(2, open_browser).start()  # Slightly longer delay for direct execution
+    Timer(2, open_browser).start()
     app = create_app()
     app.run(debug=True)
