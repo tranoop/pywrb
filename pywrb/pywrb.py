@@ -205,8 +205,7 @@ def register_routes(app):
                 threshold = float(request.form.get('threshold', 0.1))
                 abnormal_max = float(request.form.get('abnormal_max', 5))
                 abnormal_min = float(request.form.get('abnormal_min', 0))
-
-                plot_files, filtered_data = remove_spike([file_path], window, threshold, abnormal_max, abnormal_min)
+                plot_files, filtered_data = remove_spike([file_path],window, threshold, abnormal_max, abnormal_min, current_app.config['PLOT_FOLDER'])
                 processed_filename = f"processed_{os.path.basename(file_path)}.csv"
                 processed_file_path = os.path.join(current_app.config['PROCESSED_FOLDER'], processed_filename)
                 filtered_data.to_csv(processed_file_path, index=False)
