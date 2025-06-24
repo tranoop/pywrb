@@ -7,8 +7,10 @@ pip install git+https://github.com/tranoop/pywrb.git
 
 From Source
 git clone https://github.com/tranoop/pywrb.git
+
 cd pywrb
-pip install .
+
+pip install -e .
 
 Usage
 pywrb
