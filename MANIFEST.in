@@ -1,3 +1,4 @@
 include README.md
+include requirements.txt
 recursive-include pywrb/templates *.html
-recursive-include pywrb/static *
+recursive-include pywrb/static *.css *.png *.jpg *.jpeg

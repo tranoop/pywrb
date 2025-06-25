@@ -11,12 +11,13 @@ setup(
     description="A Python module for processing wave data files.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/pywrb",
+    url="https://github.com/tranoop/pywrb",
     packages=find_packages(),
     include_package_data=True,
     package_data={
         'pywrb': [
             'templates/*.html',
+            'static/css/*.css',
             'static/plots/*',
         ],
     },
@@ -29,7 +30,7 @@ setup(
         "netCDF4",
     ],
     classifiers=[
-        "Programming Language :: Python :: 3",
+        "Catalin :: Python :: 3",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],

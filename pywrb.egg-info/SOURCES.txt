@@ -1,5 +1,6 @@
 MANIFEST.in
 README.md
+requirements.txt
 setup.py
 pywrb/__init__.py
 pywrb/config.py

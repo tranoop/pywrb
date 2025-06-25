@@ -1,20 +1,22 @@
 import os
 import numpy as np
 import datetime
+from flask import current_app
 
-PROCESSED_FOLDER = "processed"
-
-def process_SDT_file(s_file):
+def process_SDT_file(s_file, processed_folder=None):
     """Main function to process the SDT file."""
+    if processed_folder is None:
+        processed_folder = current_app.config['PROCESSED_FOLDER']
+    
+    # Ensure processed folder exists
+    os.makedirs(processed_folder, exist_ok=True)
+    
     filename_base = os.path.splitext(os.path.basename(s_file))[0]
 
-    # Ensure processed folder exists
-    os.makedirs(PROCESSED_FOLDER, exist_ok=True)
-
     # Define output file paths
-    s_out = os.path.join(PROCESSED_FOLDER, filename_base + '.his')
-    s_out4 = os.path.join(PROCESSED_FOLDER, filename_base + '_225.csv')
-    s_out5 = os.path.join(PROCESSED_FOLDER, filename_base + '_SPT.txt')
+    s_out = os.path.join(processed_folder, filename_base + '.his')
+    s_out4 = os.path.join(processed_folder, filename_base + '_225.csv')
+    s_out5 = os.path.join(processed_folder, filename_base + '_SPT.txt')
 
     if os.path.exists(s_file):
         nb = 0
@@ -56,6 +58,9 @@ def process_SDT_file(s_file):
                     write_output(dt, prms, prms4, sys, spt, fod, fod4, fid_spt)
 
         print(f"Processed files saved: {s_out}, {s_out4}, {s_out5}")
+        # Verify files exist
+        for file_path in [s_out, s_out4, s_out5]:
+            print(f"File {file_path} exists: {os.path.exists(file_path)}")
     else:
         print(f"{s_file} does not exist.")
 
@@ -87,8 +92,6 @@ def calculate_checksum(data):
     for j in range(1, len(data)):
         cs ^= data[j]
     return cs
-
-# All content unchanged above...
 
 def parse_system_data(bsys):
     """Parse system data bytes into meaningful parameters."""
@@ -145,7 +148,6 @@ def parse_spectral_data(bspt):
         spt.append([frq, Smax * psd, dir_angle, spr, skw, kurt, m2, n2, K, Lat, Lon])
     return spt
 
-
 def calculate_moments(spt):
     """Calculate statistical moments from spectral data."""
     mom = np.zeros(8)
@@ -181,3 +183,4 @@ def write_output(dts, prms, prms4, sys, spt, fod, fod4, fid_spt):
     fid_spt.write(f"Time Stamp= {dts}\n")
     for row in spt:
         fid_spt.write("\t".join(f"{val:.3f}" for val in row) + "\n")
+

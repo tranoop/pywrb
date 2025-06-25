@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from flask import Flask, render_template, request, send_from_directory, send_file, url_for, session, jsonify, current_app
 import webbrowser
 from threading import Timer
@@ -12,17 +13,18 @@ from datetime import datetime
 from os import path
 
 # Import processing functions from your package
-from .processing.process_SDT_file import process_SDT_file
-from .processing.SPT_to_NC import convert_spt_to_nc
-from .processing.remove_spike import remove_spike
-from .processing.windsea_swell_seperation import windsea_swell_seperation
-from .processing.calculate_drift_velocity import calculate_drift_velocity
+from pywrb.processing.process_SDT_file import process_SDT_file
+from pywrb.processing.SPT_to_NC import convert_spt_to_nc
+from pywrb.processing.remove_spike import remove_spike
+from pywrb.processing.windsea_swell_seperation import windsea_swell_seperation
+from pywrb.processing.calculate_drift_velocity import calculate_drift_velocity
 
 def create_app():
     """Factory function to create and configure the Flask application"""
-    # Get the absolute path of the parent directory of pywrb.py
-    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-    app = Flask(__name__, static_folder=os.path.join(base_dir, 'static'))
+    # Use a user-writable directory (e.g., ~/.pywrb) for runtime directories
+    base_dir = os.path.join(Path.home(), '.pywrb')
+    static_dir = os.path.join(base_dir, 'static')
+    app = Flask(__name__, static_folder=static_dir)
     app.secret_key = 'supersecretkey'
     
     # Configuration
@@ -113,23 +115,46 @@ def register_routes(app):
                 return "<p style='color: red;'>No files selected for processing.</p>", 400
 
             # Clear old processed files
-            for old_file in os.listdir(current_app.config['PROCESSED_FOLDER']):
-                os.remove(os.path.join(current_app.config['PROCESSED_FOLDER'], old_file))
+            processed_folder = current_app.config['PROCESSED_FOLDER']
+            print(f"Clearing old files in: {processed_folder}")
+            try:
+                for old_file in os.listdir(processed_folder):
+                    file_path = os.path.join(processed_folder, old_file)
+                    print(f"Removing old file: {file_path}")
+                    os.remove(file_path)
+            except Exception as e:
+                print(f"Error clearing old files: {e}")
             
             for filename in selected_files:
                 filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
                 if os.path.exists(filepath):
-                    process_SDT_file(filepath)
+                    print(f"Processing file: {filepath}")
+                    try:
+                        process_SDT_file(filepath, processed_folder=processed_folder)
+                        print(f"Processed files for {filename} saved in: {processed_folder}")
+                    except Exception as e:
+                        print(f"Error processing {filename}: {e}")
+                        return f"<p style='color: red;'>Error processing {filename}: {e}</p>", 500
                     os.remove(filepath)
                 else:
                     return f"<p style='color: red;'>File {filename} not found!</p>", 400
 
+            # List files after processing
+            processed_files = os.listdir(processed_folder)
+            print(f"Files in PROCESSED_FOLDER after processing: {processed_files}")
             return "<p>Files processed successfully!</p>"
         return render_template('process.html', files=files)
 
     @app.route('/save_output')
     def save_output():
-        processed_files = os.listdir(current_app.config['PROCESSED_FOLDER'])
+        processed_folder = current_app.config['PROCESSED_FOLDER']
+        print(f"Checking PROCESSED_FOLDER: {processed_folder}")
+        try:
+            processed_files = os.listdir(processed_folder)
+            print(f"Processed files found: {processed_files}")
+        except Exception as e:
+            print(f"Error listing files in {processed_folder}: {e}")
+            processed_files = []
         return render_template('save_output.html', processed_files=processed_files)
 
     @app.route('/download/<filename>')
@@ -251,7 +276,6 @@ def register_routes(app):
                 filtered_data.to_csv(processed_file_path, index=False)
 
                 plot_urls = [f"{url_for('static', filename=f'plots/{p}')}?t={datetime.now().timestamp()}" for p in plot_files]
-                #print("Plot URLs:", plot_urls)
                 print("Plot files exist:", [os.path.exists(os.path.join(current_app.config['PLOT_FOLDER'], p)) for p in plot_files])
 
                 if not plot_urls:
