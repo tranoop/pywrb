@@ -27,10 +27,15 @@ Directory Structure
 Dependencies
 
 Python >= 3.10
+
 Flask >= 2.0.0
+
 numpy >= 1.21.0
+
 pandas >= 1.3.0
+
 matplotlib >= 3.4.0
+
 netCDF4 >= 1.5.7 (optional for NetCDF conversion)
 
 Contributing
